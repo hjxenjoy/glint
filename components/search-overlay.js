@@ -1,0 +1,264 @@
+import { appState } from 'store/app-state.js';
+import { search } from 'db/search.js';
+import { formatRelative } from 'utils/date.js';
+import { getAllDemos } from 'db/demos.js';
+
+export class SearchView {
+  constructor(container) {
+    this.container = container;
+    this.query = appState.get('searchQuery') || '';
+    this.results = { demos: [], projects: [] };
+    this._debounceTimer = null;
+    this.render();
+    if (this.query) {
+      this.doSearch(this.query);
+    } else {
+      this.loadRecent();
+    }
+  }
+
+  render() {
+    this.container.innerHTML = `
+      <div class="max-w-3xl mx-auto px-6 py-8">
+        <!-- Search input -->
+        <div class="relative mb-6">
+          <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-text-tertiary)] pointer-events-none">
+            <use href="icons/sprite.svg#icon-search"></use>
+          </svg>
+          <input
+            type="text"
+            id="main-search-input"
+            class="w-full pl-12 pr-12 py-3 text-lg rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-bg-secondary)] focus:border-[var(--color-accent)] focus:outline-none transition-colors"
+            placeholder="搜索 Demo、项目、标签..."
+            autofocus
+            value="${escapeAttr(this.query)}"
+          />
+          <kbd class="absolute right-4 top-1/2 -translate-y-1/2 text-xs bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded px-1.5 py-0.5 font-mono text-[var(--color-text-tertiary)]">Esc</kbd>
+        </div>
+
+        <!-- Results container -->
+        <div id="search-results">
+          <div class="text-center py-12 text-[var(--color-text-tertiary)]">
+            <svg class="w-12 h-12 mx-auto mb-3 opacity-40">
+              <use href="icons/sprite.svg#icon-search"></use>
+            </svg>
+            <p>输入关键词开始搜索</p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const input = this.container.querySelector('#main-search-input');
+
+    input.addEventListener('input', (e) => {
+      const q = e.target.value;
+      this.query = q;
+      clearTimeout(this._debounceTimer);
+      this._debounceTimer = setTimeout(() => {
+        const encoded = encodeURIComponent(q);
+        appState.navigate(q ? `#/search?q=${encoded}` : '#/search');
+        if (q) {
+          this.doSearch(q);
+        } else {
+          this.loadRecent();
+        }
+      }, 200);
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        appState.navigate('#/');
+      }
+    });
+
+    // Focus the input
+    requestAnimationFrame(() => input.focus());
+  }
+
+  async doSearch(query) {
+    const resultsEl = this.container.querySelector('#search-results');
+    if (!resultsEl) return;
+
+    resultsEl.innerHTML = `
+      <div class="text-center py-8 text-[var(--color-text-tertiary)]">
+        <div class="inline-block w-5 h-5 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin mb-2"></div>
+        <p class="text-sm">搜索中...</p>
+      </div>
+    `;
+
+    try {
+      const results = await search(query);
+      this.results = results;
+      this.renderResults(query, results);
+    } catch (err) {
+      resultsEl.innerHTML = `<p class="text-center py-8 text-[var(--color-text-secondary)]">搜索失败，请重试</p>`;
+    }
+  }
+
+  async loadRecent() {
+    const resultsEl = this.container.querySelector('#search-results');
+    if (!resultsEl) return;
+
+    try {
+      const allDemos = await getAllDemos();
+      const recent = allDemos.slice(0, 5);
+
+      if (recent.length === 0) {
+        resultsEl.innerHTML = `
+          <div class="text-center py-12 text-[var(--color-text-tertiary)]">
+            <svg class="w-12 h-12 mx-auto mb-3 opacity-40">
+              <use href="icons/sprite.svg#icon-file-code"></use>
+            </svg>
+            <p>暂无 Demo，快去新建一个吧</p>
+          </div>
+        `;
+        return;
+      }
+
+      resultsEl.innerHTML = `
+        <div>
+          <h2 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">最近访问</h2>
+          <div class="space-y-1">
+            ${recent.map((demo) => this.renderDemoItem(demo, '')).join('')}
+          </div>
+        </div>
+      `;
+    } catch (err) {
+      resultsEl.innerHTML = '';
+    }
+  }
+
+  renderResults(query, results) {
+    const resultsEl = this.container.querySelector('#search-results');
+    if (!resultsEl) return;
+
+    const { demos = [], projects = [] } = results;
+    const totalCount = demos.length + projects.length;
+
+    if (totalCount === 0) {
+      resultsEl.innerHTML = `
+        <div class="text-center py-12">
+          <svg class="w-12 h-12 mx-auto mb-3 text-[var(--color-text-tertiary)] opacity-40">
+            <use href="icons/sprite.svg#icon-search"></use>
+          </svg>
+          <p class="text-[var(--color-text-secondary)] mb-1">没有找到匹配的内容</p>
+          <p class="text-sm text-[var(--color-text-tertiary)]">没有与 "<strong>${escapeHtml(query)}</strong>" 相关的结果</p>
+        </div>
+      `;
+      return;
+    }
+
+    let html = '';
+
+    if (demos.length > 0) {
+      html += `
+        <div class="mb-6">
+          <h2 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">Demo (${demos.length})</h2>
+          <div class="space-y-1">
+            ${demos.map((demo) => this.renderDemoItem(demo, query)).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    if (projects.length > 0) {
+      html += `
+        <div class="mb-6">
+          <h2 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">项目 (${projects.length})</h2>
+          <div class="space-y-1">
+            ${projects.map((project) => this.renderProjectItem(project, query)).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    resultsEl.innerHTML = html;
+  }
+
+  renderDemoItem(demo, query) {
+    const title = query
+      ? highlightText(demo.title || '未命名', query)
+      : escapeHtml(demo.title || '未命名');
+    const snippet = demo.notes
+      ? escapeHtml(demo.notes.slice(0, 80)) + (demo.notes.length > 80 ? '…' : '')
+      : '';
+    const tags = (demo.tags || [])
+      .map(
+        (t) =>
+          `<span class="inline-block text-xs px-1.5 py-0.5 rounded bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)]">${escapeHtml(t)}</span>`
+      )
+      .join(' ');
+    const time = demo.updatedAt ? formatRelative(demo.updatedAt) : '';
+
+    return `
+      <a href="#/demos/${escapeAttr(demo.id)}"
+         class="flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors group">
+        <svg class="w-4 h-4 mt-0.5 shrink-0 text-[var(--color-text-tertiary)]">
+          <use href="icons/sprite.svg#icon-file-code"></use>
+        </svg>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-sm text-[var(--color-text-primary)] truncate">${title}</div>
+          ${snippet ? `<div class="text-xs text-[var(--color-text-secondary)] mt-0.5 line-clamp-1">${snippet}</div>` : ''}
+          ${tags ? `<div class="flex flex-wrap gap-1 mt-1">${tags}</div>` : ''}
+        </div>
+        ${time ? `<span class="text-xs text-[var(--color-text-tertiary)] shrink-0 mt-0.5">${escapeHtml(time)}</span>` : ''}
+      </a>
+    `;
+  }
+
+  renderProjectItem(project, query) {
+    const title = query
+      ? highlightText(project.title || '未命名项目', query)
+      : escapeHtml(project.title || '未命名项目');
+    const snippet = project.notes
+      ? escapeHtml(project.notes.slice(0, 80)) + (project.notes.length > 80 ? '…' : '')
+      : '';
+    const tags = (project.tags || [])
+      .map(
+        (t) =>
+          `<span class="inline-block text-xs px-1.5 py-0.5 rounded bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)]">${escapeHtml(t)}</span>`
+      )
+      .join(' ');
+    const time = project.updatedAt ? formatRelative(project.updatedAt) : '';
+    const accentStyle = project.color ? `style="color:${escapeAttr(project.color)}"` : '';
+
+    return `
+      <a href="#/projects/${escapeAttr(project.id)}"
+         class="flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors group">
+        <svg class="w-4 h-4 mt-0.5 shrink-0 text-[var(--color-accent)]" ${accentStyle}>
+          <use href="icons/sprite.svg#icon-folder"></use>
+        </svg>
+        <div class="flex-1 min-w-0">
+          <div class="font-medium text-sm text-[var(--color-text-primary)] truncate">${title}</div>
+          ${snippet ? `<div class="text-xs text-[var(--color-text-secondary)] mt-0.5 line-clamp-1">${snippet}</div>` : ''}
+          ${tags ? `<div class="flex flex-wrap gap-1 mt-1">${tags}</div>` : ''}
+        </div>
+        ${time ? `<span class="text-xs text-[var(--color-text-tertiary)] shrink-0 mt-0.5">${escapeHtml(time)}</span>` : ''}
+      </a>
+    `;
+  }
+}
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escapeAttr(str) {
+  return String(str || '')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function highlightText(text, query) {
+  if (!query) return escapeHtml(text);
+  const escaped = escapeHtml(text);
+  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return escaped.replace(
+    new RegExp(`(${escapedQuery})`, 'gi'),
+    '<mark class="bg-[var(--color-accent-subtle)] text-[var(--color-accent)] rounded px-0.5">$1</mark>'
+  );
+}

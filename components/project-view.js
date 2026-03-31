@@ -1,0 +1,579 @@
+import { appState } from 'store/app-state.js';
+import { getProject, updateProject, deleteProject } from 'db/projects.js';
+import { getDemosByProject, deleteDemo, updateDemo } from 'db/demos.js';
+import { deleteAssetsByDemo } from 'db/assets.js';
+import { formatRelative, formatFull } from 'utils/date.js';
+import { confirm } from 'components/modal.js';
+import { toast } from 'components/toast.js';
+
+const PRESET_COLORS = [
+  '#6366f1', // indigo
+  '#8b5cf6', // violet
+  '#ec4899', // pink
+  '#ef4444', // red
+  '#f97316', // orange
+  '#eab308', // yellow
+  '#22c55e', // green
+  '#06b6d4', // cyan
+];
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+export class ProjectView {
+  constructor(container) {
+    this.container = container;
+    this.project = null;
+    this.demos = [];
+    this.init();
+  }
+
+  async init() {
+    const projectId = appState.get('selectedProjectId');
+    if (!projectId) {
+      this.renderError('未选择项目');
+      return;
+    }
+
+    try {
+      [this.project, this.demos] = await Promise.all([
+        getProject(projectId),
+        getDemosByProject(projectId),
+      ]);
+
+      if (!this.project) {
+        this.renderError('项目不存在');
+        return;
+      }
+
+      this.render();
+    } catch (err) {
+      console.error('ProjectView init error:', err);
+      this.renderError('加载项目失败');
+    }
+  }
+
+  render() {
+    const p = this.project;
+    const accentStyle = p.color ? `color:${p.color};` : '';
+    const tags = p.tags || [];
+
+    this.container.innerHTML = `
+      <div class="project-view flex flex-col h-full overflow-y-auto">
+        <!-- Project header -->
+        <div class="project-header px-6 pt-6 pb-5 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
+          <!-- Title row -->
+          <div class="flex items-start gap-3 mb-4">
+            <svg class="w-7 h-7 mt-0.5 shrink-0" style="${accentStyle}"><use href="icons/sprite.svg#icon-folder-open"></use></svg>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 group">
+                <h1 class="project-title text-xl font-bold text-[var(--color-text-primary)] leading-tight cursor-pointer hover:text-[var(--color-accent)] transition-colors truncate"
+                    id="project-title-display"
+                    title="${escapeHtml(p.title)}">
+                  ${escapeHtml(p.title)}
+                </h1>
+                <button class="btn btn-icon btn-ghost w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" id="edit-title-btn" title="编辑标题">
+                  <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-edit"></use></svg>
+                </button>
+              </div>
+              <input
+                type="text"
+                class="project-title-input hidden w-full text-xl font-bold bg-transparent border-b-2 border-[var(--color-accent)] outline-none text-[var(--color-text-primary)] py-0.5 mt-0.5"
+                id="project-title-input"
+                value="${escapeHtml(p.title)}"
+                aria-label="项目名称"
+              />
+            </div>
+            <button class="btn btn-danger btn-sm gap-1.5 shrink-0" id="delete-project-btn">
+              <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-trash"></use></svg>
+              删除项目
+            </button>
+          </div>
+
+          <!-- Notes / description -->
+          <div class="mb-4 group">
+            <p class="project-notes text-sm text-[var(--color-text-secondary)] leading-relaxed cursor-pointer hover:text-[var(--color-text-primary)] transition-colors whitespace-pre-wrap ${p.notes ? '' : 'italic text-[var(--color-text-tertiary)]'}"
+               id="project-notes-display"
+               title="点击编辑备注">
+              ${p.notes ? escapeHtml(p.notes) : '点击添加项目备注…'}
+            </p>
+            <textarea
+              class="project-notes-input hidden w-full text-sm bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg outline-none focus:border-[var(--color-accent)] text-[var(--color-text-primary)] p-2.5 resize-none leading-relaxed"
+              id="project-notes-input"
+              rows="3"
+              placeholder="添加项目备注…"
+              aria-label="项目备注"
+            >${escapeHtml(p.notes || '')}</textarea>
+          </div>
+
+          <!-- Tags row -->
+          <div class="mb-4" id="tag-input-container">
+            <!-- TagInput will be mounted here if available -->
+            <div class="flex flex-wrap gap-1.5 items-center" id="tags-display">
+              ${tags
+                .map(
+                  (tag) => `
+                <span class="tag-chip inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] border border-[var(--color-border)]">
+                  ${escapeHtml(tag)}
+                  <button class="tag-remove-btn hover:text-[var(--color-danger)] transition-colors" data-tag="${escapeHtml(tag)}" aria-label="删除标签">
+                    <svg class="w-2.5 h-2.5"><use href="icons/sprite.svg#icon-close"></use></svg>
+                  </button>
+                </span>
+              `
+                )
+                .join('')}
+              <button class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border border-dashed border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors" id="add-tag-btn">
+                <svg class="w-2.5 h-2.5"><use href="icons/sprite.svg#icon-plus"></use></svg>
+                添加标签
+              </button>
+            </div>
+            <div class="hidden mt-2" id="tag-input-row">
+              <input type="text" class="text-sm px-2 py-1 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg-primary)] outline-none text-[var(--color-text-primary)] w-36"
+                     id="tag-text-input" placeholder="输入标签…" maxlength="32" />
+              <span class="text-xs text-[var(--color-text-tertiary)] ml-1">Enter 确认 · Esc 取消</span>
+            </div>
+          </div>
+
+          <!-- Color picker -->
+          <div class="flex items-center gap-3 mb-4">
+            <span class="text-xs text-[var(--color-text-tertiary)] shrink-0">主题色</span>
+            <div class="flex items-center gap-1.5" id="color-swatches">
+              ${PRESET_COLORS.map(
+                (color) => `
+                <button
+                  class="color-swatch w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--color-accent)]"
+                  style="background:${color}; border-color:${p.color === color ? color : 'transparent'};"
+                  data-color="${color}"
+                  title="${color}"
+                  aria-label="选择颜色 ${color}"
+                  ${p.color === color ? 'aria-pressed="true"' : ''}
+                ></button>
+              `
+              ).join('')}
+              <button
+                class="color-swatch w-5 h-5 rounded-full border-2 border-dashed border-[var(--color-border)] hover:border-[var(--color-text-tertiary)] transition-colors flex items-center justify-center"
+                data-color=""
+                title="无颜色"
+                aria-label="清除颜色"
+                ${!p.color ? 'aria-pressed="true"' : ''}
+              >
+                <svg class="w-3 h-3 text-[var(--color-text-tertiary)]"><use href="icons/sprite.svg#icon-close"></use></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Meta info -->
+          <div class="flex items-center gap-4 text-xs text-[var(--color-text-tertiary)]">
+            <span title="${formatFull(p.createdAt)}">创建于 ${formatRelative(p.createdAt)}</span>
+            <span title="${formatFull(p.updatedAt)}">更新于 ${formatRelative(p.updatedAt)}</span>
+            <span>${this.demos.length} 个 Demo</span>
+          </div>
+        </div>
+
+        <!-- New Demo button + Demo grid -->
+        <div class="flex-1 px-6 py-5">
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">Demo 列表</h2>
+            <a href="#/demos/new?projectId=${escapeHtml(p.id)}"
+               class="btn btn-primary btn-sm gap-1.5">
+              <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-plus"></use></svg>
+              新建 Demo
+            </a>
+          </div>
+
+          <!-- Demo grid -->
+          <div id="demo-grid">
+            ${this.renderDemoGrid()}
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.bindEvents();
+  }
+
+  renderDemoGrid() {
+    if (this.demos.length === 0) {
+      return `
+        <div class="flex flex-col items-center justify-center py-16 text-center gap-4">
+          <svg class="w-12 h-12 text-[var(--color-text-tertiary)] opacity-40"><use href="icons/sprite.svg#icon-file-code"></use></svg>
+          <div>
+            <p class="text-sm text-[var(--color-text-secondary)] mb-1">此项目暂无 Demo</p>
+            <p class="text-xs text-[var(--color-text-tertiary)]">点击"新建 Demo"开始创建</p>
+          </div>
+          <a href="#/demos/new?projectId=${escapeHtml(this.project.id)}"
+             class="btn btn-primary btn-sm gap-1.5">
+            <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-plus"></use></svg>
+            新建 Demo
+          </a>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        ${this.demos.map((demo) => this.renderDemoCard(demo)).join('')}
+      </div>
+    `;
+  }
+
+  renderDemoCard(demo) {
+    const tags = demo.tags || [];
+    const fileCount = (demo.files || []).length;
+    return `
+      <div class="demo-card group relative flex flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] hover:border-[var(--color-accent)] hover:shadow-md transition-all duration-200 overflow-hidden"
+           data-demo-id="${escapeHtml(demo.id)}">
+        <!-- Card body -->
+        <a href="#/demos/${escapeHtml(demo.id)}" class="flex-1 p-4 block">
+          <div class="flex items-start gap-2 mb-2">
+            <svg class="w-4 h-4 mt-0.5 shrink-0 text-[var(--color-accent)]"><use href="icons/sprite.svg#icon-file-code"></use></svg>
+            <h3 class="text-sm font-semibold text-[var(--color-text-primary)] leading-snug line-clamp-2 flex-1">${escapeHtml(demo.title)}</h3>
+          </div>
+          ${demo.notes ? `<p class="text-xs text-[var(--color-text-tertiary)] line-clamp-2 mb-2 leading-relaxed">${escapeHtml(demo.notes)}</p>` : ''}
+          ${
+            tags.length > 0
+              ? `
+            <div class="flex flex-wrap gap-1 mb-2">
+              ${tags
+                .slice(0, 3)
+                .map(
+                  (tag) => `
+                <span class="inline-block px-1.5 py-0.5 rounded text-[10px] bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)] border border-[var(--color-border)]">
+                  ${escapeHtml(tag)}
+                </span>
+              `
+                )
+                .join('')}
+              ${tags.length > 3 ? `<span class="text-[10px] text-[var(--color-text-tertiary)]">+${tags.length - 3}</span>` : ''}
+            </div>
+          `
+              : ''
+          }
+        </a>
+
+        <!-- Card footer -->
+        <div class="flex items-center justify-between px-4 py-2.5 border-t border-[var(--color-border)] bg-[var(--color-bg-tertiary)]">
+          <span class="text-[10px] text-[var(--color-text-tertiary)]" title="${formatFull(demo.updatedAt)}">
+            ${formatRelative(demo.updatedAt)}
+          </span>
+          <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <a href="#/demos/${escapeHtml(demo.id)}/edit"
+               class="btn btn-icon btn-ghost w-6 h-6"
+               title="编辑">
+              <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-edit"></use></svg>
+            </a>
+            <button class="btn btn-icon btn-ghost w-6 h-6 hover:text-[var(--color-danger)] demo-delete-btn"
+                    data-demo-id="${escapeHtml(demo.id)}"
+                    data-demo-title="${escapeHtml(demo.title)}"
+                    title="删除">
+              <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-trash"></use></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  bindEvents() {
+    // Inline title editing
+    const titleDisplay = this.container.querySelector('#project-title-display');
+    const titleInput = this.container.querySelector('#project-title-input');
+    const editTitleBtn = this.container.querySelector('#edit-title-btn');
+
+    const startTitleEdit = () => {
+      titleDisplay.classList.add('hidden');
+      editTitleBtn.classList.add('hidden');
+      titleInput.classList.remove('hidden');
+      titleInput.focus();
+      titleInput.select();
+    };
+
+    const saveTitleEdit = async () => {
+      const newTitle = titleInput.value.trim();
+      if (!newTitle || newTitle === this.project.title) {
+        cancelTitleEdit();
+        return;
+      }
+      try {
+        this.project = await updateProject(this.project.id, { title: newTitle });
+        titleDisplay.textContent = newTitle;
+        titleDisplay.title = newTitle;
+        titleInput.classList.add('hidden');
+        titleDisplay.classList.remove('hidden');
+        editTitleBtn.classList.remove('hidden');
+        appState.notifyDataChanged('project');
+        toast.success('标题已更新');
+      } catch (err) {
+        console.error('Update title error:', err);
+        toast.error('更新失败');
+        cancelTitleEdit();
+      }
+    };
+
+    const cancelTitleEdit = () => {
+      titleInput.value = this.project.title;
+      titleInput.classList.add('hidden');
+      titleDisplay.classList.remove('hidden');
+      editTitleBtn.classList.remove('hidden');
+    };
+
+    titleDisplay.addEventListener('click', startTitleEdit);
+    editTitleBtn.addEventListener('click', startTitleEdit);
+    titleInput.addEventListener('blur', saveTitleEdit);
+    titleInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveTitleEdit();
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelTitleEdit();
+      }
+    });
+
+    // Inline notes editing
+    const notesDisplay = this.container.querySelector('#project-notes-display');
+    const notesInput = this.container.querySelector('#project-notes-input');
+
+    const startNotesEdit = () => {
+      notesDisplay.classList.add('hidden');
+      notesInput.classList.remove('hidden');
+      notesInput.focus();
+    };
+
+    const saveNotesEdit = async () => {
+      const newNotes = notesInput.value.trim();
+      if (newNotes === (this.project.notes || '')) {
+        cancelNotesEdit();
+        return;
+      }
+      try {
+        this.project = await updateProject(this.project.id, { notes: newNotes });
+        notesDisplay.textContent = newNotes || '点击添加项目备注…';
+        if (newNotes) {
+          notesDisplay.classList.remove('italic', 'text-[var(--color-text-tertiary)]');
+        } else {
+          notesDisplay.classList.add('italic', 'text-[var(--color-text-tertiary)]');
+        }
+        notesInput.classList.add('hidden');
+        notesDisplay.classList.remove('hidden');
+        appState.notifyDataChanged('project');
+      } catch (err) {
+        console.error('Update notes error:', err);
+        toast.error('更新失败');
+        cancelNotesEdit();
+      }
+    };
+
+    const cancelNotesEdit = () => {
+      notesInput.value = this.project.notes || '';
+      notesInput.classList.add('hidden');
+      notesDisplay.classList.remove('hidden');
+    };
+
+    notesDisplay.addEventListener('click', startNotesEdit);
+    notesInput.addEventListener('blur', saveNotesEdit);
+    notesInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        saveNotesEdit();
+      }
+    });
+
+    // Tags
+    this.bindTagEvents();
+
+    // Color swatches
+    this.container.querySelectorAll('.color-swatch').forEach((swatch) => {
+      swatch.addEventListener('click', async () => {
+        const color = swatch.dataset.color || null;
+        try {
+          this.project = await updateProject(this.project.id, { color });
+          // Update swatch active states
+          this.container.querySelectorAll('.color-swatch').forEach((s) => {
+            const c = s.dataset.color || null;
+            s.style.borderColor = c === color && color ? color : 'transparent';
+            if (!c && !color) s.style.borderColor = 'var(--color-accent)';
+            s.setAttribute('aria-pressed', String(c === color));
+          });
+          // Update folder icon color
+          const folderIcon = this.container.querySelector('.project-header svg');
+          if (folderIcon) folderIcon.style.color = color || '';
+          appState.notifyDataChanged('project');
+        } catch (err) {
+          console.error('Update color error:', err);
+          toast.error('更新失败');
+        }
+      });
+    });
+
+    // Delete project
+    this.container.querySelector('#delete-project-btn').addEventListener('click', () => {
+      this.handleDeleteProject();
+    });
+
+    // Demo delete buttons
+    this.container.querySelectorAll('.demo-delete-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleDeleteDemo(btn.dataset.demoId, btn.dataset.demoTitle);
+      });
+    });
+  }
+
+  bindTagEvents() {
+    const addTagBtn = this.container.querySelector('#add-tag-btn');
+    const tagInputRow = this.container.querySelector('#tag-input-row');
+    const tagTextInput = this.container.querySelector('#tag-text-input');
+
+    addTagBtn?.addEventListener('click', () => {
+      tagInputRow.classList.remove('hidden');
+      tagTextInput.focus();
+    });
+
+    tagTextInput?.addEventListener('keydown', async (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const newTag = tagTextInput.value.trim();
+        if (newTag && !(this.project.tags || []).includes(newTag)) {
+          await this.saveTag([...(this.project.tags || []), newTag]);
+        }
+        tagTextInput.value = '';
+        tagInputRow.classList.add('hidden');
+      }
+      if (e.key === 'Escape') {
+        tagTextInput.value = '';
+        tagInputRow.classList.add('hidden');
+      }
+    });
+
+    tagTextInput?.addEventListener('blur', () => {
+      setTimeout(() => {
+        tagTextInput.value = '';
+        tagInputRow.classList.add('hidden');
+      }, 150);
+    });
+
+    // Remove tag buttons
+    this.container.querySelectorAll('.tag-remove-btn').forEach((btn) => {
+      btn.addEventListener('click', async () => {
+        const tagToRemove = btn.dataset.tag;
+        const newTags = (this.project.tags || []).filter((t) => t !== tagToRemove);
+        await this.saveTag(newTags);
+      });
+    });
+  }
+
+  async saveTag(newTags) {
+    try {
+      this.project = await updateProject(this.project.id, { tags: newTags });
+      this.refreshTagsDisplay();
+      appState.notifyDataChanged('project');
+    } catch (err) {
+      console.error('Update tags error:', err);
+      toast.error('更新失败');
+    }
+  }
+
+  refreshTagsDisplay() {
+    const tagsDisplay = this.container.querySelector('#tags-display');
+    if (!tagsDisplay) return;
+    const tags = this.project.tags || [];
+    tagsDisplay.innerHTML = `
+      ${tags
+        .map(
+          (tag) => `
+        <span class="tag-chip inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] border border-[var(--color-border)]">
+          ${escapeHtml(tag)}
+          <button class="tag-remove-btn hover:text-[var(--color-danger)] transition-colors" data-tag="${escapeHtml(tag)}" aria-label="删除标签">
+            <svg class="w-2.5 h-2.5"><use href="icons/sprite.svg#icon-close"></use></svg>
+          </button>
+        </span>
+      `
+        )
+        .join('')}
+      <button class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border border-dashed border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors" id="add-tag-btn">
+        <svg class="w-2.5 h-2.5"><use href="icons/sprite.svg#icon-plus"></use></svg>
+        添加标签
+      </button>
+    `;
+    // Re-bind tag events after re-render
+    this.bindTagEvents();
+  }
+
+  async handleDeleteProject() {
+    const confirmed = await confirm({
+      title: '删除项目',
+      message: '删除项目将不会删除其中的 Demo，Demo 将变为独立状态。确定要删除此项目吗？',
+      confirmText: '删除项目',
+      cancelText: '取消',
+      danger: true,
+    });
+
+    if (!confirmed) return;
+
+    try {
+      // Delete project record (does not cascade)
+      await deleteProject(this.project.id);
+
+      // Detach all demos from this project (set projectId = null)
+      await Promise.all(this.demos.map((demo) => updateDemo(demo.id, { projectId: null })));
+
+      appState.notifyDataChanged('project');
+      toast.success('项目已删除，Demo 已变为独立状态');
+      appState.navigate('#/');
+    } catch (err) {
+      console.error('Delete project error:', err);
+      toast.error('删除失败，请重试');
+    }
+  }
+
+  async handleDeleteDemo(demoId, demoTitle) {
+    const confirmed = await confirm({
+      title: '删除 Demo',
+      message: `确定要删除"${demoTitle}"吗？此操作不可撤销。`,
+      confirmText: '删除',
+      cancelText: '取消',
+      danger: true,
+    });
+
+    if (!confirmed) return;
+
+    try {
+      await deleteAssetsByDemo(demoId);
+      await deleteDemo(demoId);
+      this.demos = this.demos.filter((d) => d.id !== demoId);
+      const demoGrid = this.container.querySelector('#demo-grid');
+      if (demoGrid) demoGrid.innerHTML = this.renderDemoGrid();
+      // Re-bind demo delete buttons
+      this.container.querySelectorAll('.demo-delete-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          this.handleDeleteDemo(btn.dataset.demoId, btn.dataset.demoTitle);
+        });
+      });
+      appState.notifyDataChanged('demo');
+      toast.success('Demo 已删除');
+    } catch (err) {
+      console.error('Delete demo error:', err);
+      toast.error('删除失败，请重试');
+    }
+  }
+
+  renderError(message) {
+    this.container.innerHTML = `
+      <div class="flex flex-col items-center justify-center h-full gap-4 text-[var(--color-text-tertiary)]">
+        <svg class="w-12 h-12 opacity-40"><use href="icons/sprite.svg#icon-alert-circle"></use></svg>
+        <p class="text-sm">${escapeHtml(message)}</p>
+        <a href="#/" class="btn btn-secondary btn-sm">返回首页</a>
+      </div>
+    `;
+  }
+}
