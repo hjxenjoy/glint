@@ -3,20 +3,24 @@
   "version": "1.0.0",
   "description": "一个个闪光的创意片段 — 静态 HTML Demo 管理与预览工具",
   "scripts": {
-    "format": "prettier --write \"**/*.{html,css,js,json}\" --ignore-path .gitignore",
-    "format:check": "prettier --check \"**/*.{html,css,js,json}\" --ignore-path .gitignore",
+    "build:css": "tailwindcss -i styles/tailwind-input.css -o styles/tailwind.css --minify",
+    "watch:css": "tailwindcss -i styles/tailwind-input.css -o styles/tailwind.css --watch",
+    "format": "prettier --write \"**/*.{html,css,js,json}\" --ignore-path .prettierignore",
+    "format:check": "prettier --check \"**/*.{html,css,js,json}\" --ignore-path .prettierignore",
     "prepare": "node scripts/setup-hooks.js"
   },
   "lint-staged": {
     "*.{html,css,js,json}": [
-      "prettier --write"
+      "prettier --write --ignore-path .prettierignore"
     ]
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@tailwindcss/cli": "^4.2.2",
     "lint-staged": "^16.4.0",
-    "prettier": "^3.8.1"
+    "prettier": "^3.8.1",
+    "tailwindcss": "^4.2.2"
   }
 }

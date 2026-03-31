@@ -1,0 +1,10 @@
+@import 'tailwindcss';
+
+/* Dark mode: triggered by [data-theme="dark"] on <html> */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* Content sources for class scanning */
+@source '../index.html';
+@source '../components/**/*.js';
+@source '../store/**/*.js';
+@source '../utils/**/*.js';

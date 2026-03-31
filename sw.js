@@ -1,11 +1,12 @@
-const CACHE_VERSION = 'v1';
-const SHELL_CACHE = 'glint-shell-v1';
-const CDN_CACHE = 'glint-cdn-v1';
+const CACHE_VERSION = 'v2';
+const SHELL_CACHE = 'glint-shell-v2';
+const CDN_CACHE = 'glint-cdn-v2';
 
 const SHELL_FILES = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/styles/tailwind.css',
   '/styles/layers.css',
   '/styles/theme.css',
   '/styles/layout.css',
@@ -42,7 +43,8 @@ const SHELL_FILES = [
   '/icons/sprite.svg',
 ];
 
-const CDN_ORIGINS = ['https://cdn.tailwindcss.com', 'https://cdn.jsdelivr.net'];
+// Only cdn.jsdelivr.net remains (for fflate, loaded on demand for import/export)
+const CDN_ORIGINS = ['https://cdn.jsdelivr.net'];
 
 // Install: precache all shell files
 self.addEventListener('install', function (event) {

@@ -1,0 +1,4 @@
+node_modules/
+.claude/
+styles/tailwind.css
+package-lock.json
