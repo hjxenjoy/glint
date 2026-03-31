@@ -296,10 +296,10 @@ export class HomeView {
           await deleteDemo(id);
           await deleteAssetsByDemo(id);
           appState.notifyDataChanged('demos');
-          toast({ type: 'success', message: 'Demo 已删除' });
+          toast.success('Demo 已删除');
         } catch (err) {
           console.error(err);
-          toast({ type: 'error', message: '删除失败，请重试' });
+          toast.error('删除失败，请重试');
         }
       });
     });
@@ -345,10 +345,16 @@ export class AllDemosView {
     this.allDemos = allDemos;
     this.allProjects = allProjects;
     this.projectsMap = new Map(allProjects.map((p) => [p.id, p]));
-    this.applyFilters();
+    this._computeFiltered();
+    this.render();
   }
 
   applyFilters() {
+    this._computeFiltered();
+    this.renderContent();
+  }
+
+  _computeFiltered() {
     let results = [...this.allDemos];
     const q = this.filterQuery.trim().toLowerCase();
     if (q) {
@@ -370,7 +376,6 @@ export class AllDemosView {
       results.sort((a, b) => b.updatedAt - a.updatedAt);
     }
     this.filtered = results;
-    this.renderContent();
   }
 
   renderSkeleton() {
@@ -602,10 +607,10 @@ export class AllDemosView {
           await deleteDemo(id);
           await deleteAssetsByDemo(id);
           appState.notifyDataChanged('demos');
-          toast({ type: 'success', message: 'Demo 已删除' });
+          toast.success('Demo 已删除');
         } catch (err) {
           console.error(err);
-          toast({ type: 'error', message: '删除失败，请重试' });
+          toast.error('删除失败，请重试');
         }
       });
     });
