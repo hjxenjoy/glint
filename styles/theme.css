@@ -1,0 +1,55 @@
+@layer base {
+  :root {
+    --color-bg-primary: #f8fafc; /* slate-50 */
+    --color-bg-secondary: #ffffff; /* white */
+    --color-bg-tertiary: #f1f5f9; /* slate-100 */
+    --color-bg-hover: #e2e8f0; /* slate-200 */
+    --color-border: #e2e8f0; /* slate-200 */
+    --color-border-subtle: #f1f5f9; /* slate-100 */
+    --color-text-primary: #0f172a; /* slate-900 */
+    --color-text-secondary: #64748b; /* slate-500 */
+    --color-text-tertiary: #94a3b8; /* slate-400 */
+    --color-accent: #6366f1; /* indigo-500 */
+    --color-accent-hover: #4f46e5; /* indigo-600 */
+    --color-accent-subtle: #eef2ff; /* indigo-50 */
+    --color-accent-text: #ffffff;
+    --color-danger: #ef4444; /* red-500 */
+    --color-danger-hover: #dc2626; /* red-600 */
+    --color-success: #22c55e; /* green-500 */
+    --color-warning: #f59e0b; /* amber-500 */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+    --transition-base: 150ms ease;
+    --transition-slow: 300ms ease;
+    --sidebar-width: 260px;
+    --header-height: 56px;
+  }
+
+  [data-theme='dark'] {
+    --color-bg-primary: #0f172a; /* slate-900 */
+    --color-bg-secondary: #1e293b; /* slate-800 */
+    --color-bg-tertiary: #334155; /* slate-700 */
+    --color-bg-hover: #475569; /* slate-600 */
+    --color-border: #334155; /* slate-700 */
+    --color-border-subtle: #1e293b; /* slate-800 */
+    --color-text-primary: #f1f5f9; /* slate-100 */
+    --color-text-secondary: #94a3b8; /* slate-400 */
+    --color-text-tertiary: #64748b; /* slate-500 */
+    --color-accent: #818cf8; /* indigo-400 */
+    --color-accent-hover: #6366f1; /* indigo-500 */
+    --color-accent-subtle: #1e1b4b; /* indigo-950 */
+    --color-accent-text: #ffffff;
+    --color-danger: #f87171; /* red-400 */
+    --color-danger-hover: #ef4444; /* red-500 */
+    --color-success: #4ade80; /* green-400 */
+    --color-warning: #fbbf24; /* amber-400 */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  }
+}

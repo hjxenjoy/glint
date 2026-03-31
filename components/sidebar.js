@@ -1,0 +1,224 @@
+import { appState } from 'store/app-state.js';
+import { getAllProjects } from 'db/projects.js';
+import { getDemosByProject, getStandaloneDemos } from 'db/demos.js';
+import { getStorageEstimate, formatBytes } from 'utils/storage-estimate.js';
+
+export class Sidebar {
+  constructor(container) {
+    this.container = container;
+    this.projects = [];
+    this.standaloneDemos = [];
+    this.expandedProjects = new Set();
+    this.render();
+    this.loadData();
+
+    appState.addEventListener('data-changed', () => this.loadData());
+    appState.addEventListener('change', (e) => {
+      if (
+        e.detail.key === 'currentView' ||
+        e.detail.key === 'selectedDemoId' ||
+        e.detail.key === 'selectedProjectId'
+      ) {
+        this.updateActiveState();
+      }
+    });
+  }
+
+  async loadData() {
+    [this.projects, this.standaloneDemos] = await Promise.all([
+      getAllProjects(),
+      getStandaloneDemos(),
+    ]);
+    this.renderContent();
+    this.loadStorageInfo();
+  }
+
+  async loadStorageInfo() {
+    const estimate = await getStorageEstimate();
+    if (!estimate) return;
+    const bar = this.container.querySelector('#storage-bar-fill');
+    const label = this.container.querySelector('#storage-label');
+    if (bar) bar.style.width = `${Math.min(estimate.percent, 100)}%`;
+    if (label)
+      label.textContent = `${formatBytes(estimate.usage)} / ${formatBytes(estimate.quota)}`;
+  }
+
+  render() {
+    this.container.innerHTML = `
+      <div class="flex flex-col h-full">
+        <!-- New Demo button -->
+        <div class="p-3 border-b border-[var(--color-border)]">
+          <a href="#/demos/new" class="btn btn-primary w-full justify-center gap-2">
+            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-plus"></use></svg>
+            新建 Demo
+          </a>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="p-2 border-b border-[var(--color-border)]">
+          <a href="#/" class="sidebar-nav-item" data-view="home">
+            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-home"></use></svg>
+            <span>首页</span>
+          </a>
+          <a href="#/demos" class="sidebar-nav-item" data-view="all-demos">
+            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-grid"></use></svg>
+            <span>全部 Demo</span>
+          </a>
+        </nav>
+
+        <!-- Projects & Demos list (scrollable) -->
+        <div class="flex-1 overflow-y-auto" id="sidebar-content">
+          <!-- Dynamic content rendered by renderContent() -->
+        </div>
+
+        <!-- Storage indicator -->
+        <div class="p-3 border-t border-[var(--color-border)]">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs text-[var(--color-text-tertiary)]">存储用量</span>
+            <span class="text-xs text-[var(--color-text-tertiary)]" id="storage-label">-</span>
+          </div>
+          <div class="h-1.5 rounded-full bg-[var(--color-bg-tertiary)] overflow-hidden">
+            <div id="storage-bar-fill" class="h-full bg-[var(--color-accent)] rounded-full transition-all duration-500" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.bindNavEvents();
+    this.renderContent();
+  }
+
+  renderContent() {
+    const content = this.container.querySelector('#sidebar-content');
+    if (!content) return;
+
+    let html = '';
+
+    // Projects section
+    html += `
+      <div class="p-2">
+        <div class="flex items-center justify-between px-2 py-1 mb-1">
+          <span class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">项目</span>
+          <a href="#/demos/new" class="btn btn-icon btn-ghost w-5 h-5" title="新建项目" id="new-project-btn">
+            <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-folder-plus"></use></svg>
+          </a>
+        </div>
+        ${this.projects.length === 0 ? `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">暂无项目</p>` : ''}
+        ${this.projects.map((p) => this.renderProjectItem(p)).join('')}
+      </div>
+    `;
+
+    // Standalone demos section
+    if (this.standaloneDemos.length > 0) {
+      html += `
+        <div class="p-2 border-t border-[var(--color-border)]">
+          <div class="px-2 py-1 mb-1">
+            <span class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">独立 Demo</span>
+          </div>
+          ${this.standaloneDemos.map((d) => this.renderDemoItem(d)).join('')}
+        </div>
+      `;
+    }
+
+    content.innerHTML = html;
+    this.bindContentEvents();
+    this.updateActiveState();
+  }
+
+  renderProjectItem(project) {
+    const isExpanded = this.expandedProjects.has(project.id);
+    return `
+      <div class="sidebar-project" data-project-id="${project.id}">
+        <div class="sidebar-nav-item group" data-view="project" data-id="${project.id}">
+          <button class="sidebar-expand-btn p-0.5 rounded hover:bg-[var(--color-bg-hover)] transition-colors" data-expand="${project.id}" aria-label="展开">
+            <svg class="w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}"><use href="icons/sprite.svg#icon-chevron-right"></use></svg>
+          </button>
+          <svg class="w-4 h-4 text-[var(--color-accent)]"><use href="icons/sprite.svg#icon-folder${isExpanded ? '-open' : ''}"></use></svg>
+          <a href="#/projects/${project.id}" class="flex-1 truncate text-sm">${escapeHtml(project.title)}</a>
+        </div>
+        ${
+          isExpanded
+            ? `<div class="pl-6" data-demo-list="${project.id}">
+          <div class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">加载中...</div>
+        </div>`
+            : ''
+        }
+      </div>
+    `;
+  }
+
+  renderDemoItem(demo, indent = false) {
+    const currentDemoId = appState.get('selectedDemoId');
+    const isActive = currentDemoId === demo.id;
+    return `
+      <a href="#/demos/${demo.id}"
+         class="sidebar-nav-item text-sm ${isActive ? 'active' : ''} ${indent ? 'pl-8' : ''}"
+         data-view="demo-preview" data-id="${demo.id}">
+        <svg class="w-3.5 h-3.5 shrink-0"><use href="icons/sprite.svg#icon-file-code"></use></svg>
+        <span class="flex-1 truncate">${escapeHtml(demo.title)}</span>
+      </a>
+    `;
+  }
+
+  async bindContentEvents() {
+    // Expand/collapse project
+    this.container.querySelectorAll('[data-expand]').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const projectId = btn.dataset.expand;
+        if (this.expandedProjects.has(projectId)) {
+          this.expandedProjects.delete(projectId);
+        } else {
+          this.expandedProjects.add(projectId);
+          // Pre-load demos for this project
+          const demos = await getDemosByProject(projectId);
+          const listEl = this.container.querySelector(`[data-demo-list="${projectId}"]`);
+          if (listEl) {
+            listEl.innerHTML = demos.length
+              ? demos.map((d) => this.renderDemoItem(d, true)).join('')
+              : `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">暂无 Demo</p>`;
+          }
+        }
+        this.renderContent();
+      });
+    });
+
+    // New project button
+    this.container.querySelector('#new-project-btn')?.addEventListener('click', (e) => {
+      e.preventDefault();
+      appState.dispatchEvent(new CustomEvent('open-new-project-modal'));
+    });
+  }
+
+  bindNavEvents() {
+    // (Navigation links use href, no extra events needed)
+  }
+
+  updateActiveState() {
+    const currentView = appState.get('currentView');
+    const selectedProjectId = appState.get('selectedProjectId');
+    const selectedDemoId = appState.get('selectedDemoId');
+
+    this.container.querySelectorAll('.sidebar-nav-item').forEach((el) => {
+      const view = el.dataset.view;
+      const id = el.dataset.id;
+      let isActive = false;
+
+      if (view === 'home' && currentView === 'home') isActive = true;
+      else if (view === 'all-demos' && currentView === 'all-demos') isActive = true;
+      else if (view === 'project' && id === selectedProjectId) isActive = true;
+      else if (view === 'demo-preview' && id === selectedDemoId) isActive = true;
+
+      el.classList.toggle('active', isActive);
+    });
+  }
+}
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <script>
+      const t = localStorage.getItem('glint-theme') || 'system';
+      if (t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.dataset.theme = 'dark';
+      }
+    </script>
+
+    <link rel="stylesheet" href="styles/layers.css" />
+    <link rel="stylesheet" href="styles/theme.css" />
+    <link rel="stylesheet" href="styles/layout.css" />
+    <link rel="stylesheet" href="styles/components.css" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+      tailwind.config = {
+        darkMode: ['selector', '[data-theme="dark"]'],
+        theme: { extend: {} },
+      };
+    </script>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "db/": "./db/",
+          "store/": "./store/",
+          "utils/": "./utils/",
+          "components/": "./components/"
+        }
+      }
+    </script>
+
+    <title>Glint</title>
+
+    <meta name="theme-color" content="#6366f1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <link rel="manifest" href="manifest.json" />
+
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 L19 13 L30 16 L19 19 L16 30 L13 19 L2 16 L13 13 Z' fill='%236366f1'/%3E%3C/svg%3E"
+    />
+  </head>
+  <body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100">
+    <div id="app">
+      <div id="app-loading" class="app-layout animate-pulse">
+        <div class="app-sidebar bg-slate-100 dark:bg-slate-800 h-screen"></div>
+        <div class="app-content flex flex-col">
+          <div
+            class="app-header bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700"
+          ></div>
+          <div class="flex-1 p-6 grid grid-cols-3 gap-4">
+            <!-- skeleton cards -->
+            <div class="h-40 rounded-xl bg-slate-200 dark:bg-slate-700"></div>
+            <div class="h-40 rounded-xl bg-slate-200 dark:bg-slate-700"></div>
+            <div class="h-40 rounded-xl bg-slate-200 dark:bg-slate-700"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="components/app.js"></script>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(console.error);
+        });
+      }
+    </script>
+  </body>
+</html>
