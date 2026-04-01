@@ -123,8 +123,8 @@ const translations = {
     'editor.upload': '上传文件',
     'editor.upload_folder': '上传文件夹',
     'editor.drop_zone': '拖放文件到此处，或点击上传',
-    'editor.entry_file': '入口文件',
-    'editor.set_entry': '设为入口',
+    'editor.entry_file': '默认文件',
+    'editor.set_entry': '设为默认',
     'editor.file.edit': '编辑',
     'editor.file.delete': '删除',
     'editor.total_size': '文件总大小',
@@ -135,7 +135,7 @@ const translations = {
     'editor.tags': '标签',
     'editor.project': '所属项目',
     'editor.no_project': '无项目（独立 Demo）',
-    'editor.entry_file_label': '入口文件',
+    'editor.entry_file_label': '默认文件',
     'editor.created': '创建时间',
     'editor.updated': '更新时间',
     'editor.save.success': '已保存',
@@ -216,6 +216,20 @@ const translations = {
     'settings.language.title': '语言',
     'settings.language.zh': '中文',
     'settings.language.en': 'English',
+
+    // New Project Modal
+    'project.new': '新建项目',
+    'project.new.title_label': '项目名称',
+    'project.new.title_placeholder': '输入项目名称',
+    'project.new.create': '创建',
+    'project.new.success': '项目已创建',
+    'project.new.error': '创建失败',
+    'project.new.validation.title': '请输入项目名称',
+
+    // File switcher in preview
+    'demo.file_tabs.default': '默认',
+    'demo.file_tabs.open': '在预览中打开',
+    'demo.file_tabs.all_files': '所有文件',
 
     // Tag Input
     'tag.placeholder': '添加标签...',
@@ -366,8 +380,8 @@ const translations = {
     'editor.upload': 'Upload files',
     'editor.upload_folder': 'Upload folder',
     'editor.drop_zone': 'Drop files here, or click to upload',
-    'editor.entry_file': 'Entry file',
-    'editor.set_entry': 'Set as entry',
+    'editor.entry_file': 'Default file',
+    'editor.set_entry': 'Set as default',
     'editor.file.edit': 'Edit',
     'editor.file.delete': 'Delete',
     'editor.total_size': 'Total size',
@@ -378,7 +392,7 @@ const translations = {
     'editor.tags': 'Tags',
     'editor.project': 'Project',
     'editor.no_project': 'No project (standalone)',
-    'editor.entry_file_label': 'Entry file',
+    'editor.entry_file_label': 'Default file',
     'editor.created': 'Created',
     'editor.updated': 'Updated',
     'editor.save.success': 'Saved',
@@ -461,6 +475,20 @@ const translations = {
     'settings.language.title': 'Language',
     'settings.language.zh': '中文',
     'settings.language.en': 'English',
+
+    // New Project Modal
+    'project.new': 'New Project',
+    'project.new.title_label': 'Project name',
+    'project.new.title_placeholder': 'Enter project name',
+    'project.new.create': 'Create',
+    'project.new.success': 'Project created',
+    'project.new.error': 'Failed to create project',
+    'project.new.validation.title': 'Please enter a project name',
+
+    // File switcher in preview
+    'demo.file_tabs.default': 'Default',
+    'demo.file_tabs.open': 'Open in preview',
+    'demo.file_tabs.all_files': 'All files',
 
     // Tag Input
     'tag.placeholder': 'Add tags...',

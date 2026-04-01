@@ -127,9 +127,12 @@ function inlineCSSAssets(css, assetsMap) {
   });
 }
 
-// Build complete srcdoc string for iframe preview
-export function buildSrcdoc(demo, assets) {
-  const entryFile = demo.files?.find((f) => f.name === demo.entryFile) || demo.files?.[0];
+// Build complete srcdoc string for iframe preview.
+// Pass fileNameOverride to render a specific file instead of the default.
+export function buildSrcdoc(demo, assets, fileNameOverride = null) {
+  const entryFile = fileNameOverride
+    ? (demo.files?.find((f) => f.name === fileNameOverride) ?? demo.files?.[0])
+    : (demo.files?.find((f) => f.name === demo.entryFile) ?? demo.files?.[0]);
   if (!entryFile) return '<html><body><p>No HTML file found</p></body></html>';
 
   // Build assets map: filename -> base64 data URI

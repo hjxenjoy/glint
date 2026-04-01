@@ -1,8 +1,10 @@
 import { appState } from 'store/app-state.js';
-import { getAllProjects } from 'db/projects.js';
+import { getAllProjects, createProject } from 'db/projects.js';
 import { getDemosByProject, getStandaloneDemos } from 'db/demos.js';
 import { getStorageEstimate, formatBytes } from 'utils/storage-estimate.js';
 import { t } from 'utils/i18n.js';
+import { Modal } from 'components/modal.js';
+import { toast } from 'components/toast.js';
 
 export class Sidebar {
   constructor(container) {
@@ -193,7 +195,60 @@ export class Sidebar {
     // New project button
     this.container.querySelector('#new-project-btn')?.addEventListener('click', (e) => {
       e.preventDefault();
-      appState.dispatchEvent(new CustomEvent('open-new-project-modal'));
+      this._openNewProjectModal();
+    });
+  }
+
+  _openNewProjectModal() {
+    const formEl = document.createElement('div');
+    formEl.innerHTML = `
+      <div class="flex flex-col gap-3">
+        <div>
+          <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">${t('project.new.title_label')}</label>
+          <input id="new-project-title" type="text" class="input w-full" placeholder="${t('project.new.title_label')}" maxlength="100" autofocus />
+        </div>
+      </div>
+    `;
+
+    const modal = new Modal({
+      title: t('project.new'),
+      content: formEl,
+      actions: [
+        {
+          label: t('modal.cancel'),
+          variant: 'secondary',
+          onClick: (m) => m.close(),
+        },
+        {
+          label: t('project.new.create'),
+          variant: 'primary',
+          onClick: async (m) => {
+            const titleInput = formEl.querySelector('#new-project-title');
+            const title = titleInput.value.trim();
+            if (!title) {
+              titleInput.classList.add('border-red-500');
+              titleInput.focus();
+              return;
+            }
+            try {
+              await createProject({ title });
+              appState.notifyDataChanged('projects');
+              toast.success(t('project.new.success'));
+              m.close();
+            } catch {
+              toast.error(t('project.new.error'));
+            }
+          },
+        },
+      ],
+      onClose: () => modal.destroy(),
+    });
+
+    modal.open();
+
+    // Focus input after modal opens
+    requestAnimationFrame(() => {
+      formEl.querySelector('#new-project-title')?.focus();
     });
   }
 
