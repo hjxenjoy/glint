@@ -12,6 +12,7 @@ export class Sidebar {
     this.projects = [];
     this.standaloneDemos = [];
     this.expandedProjects = new Set();
+    this.projectDemosCache = {}; // projectId -> demos[]
     this._localeHandler = () => {
       this.render();
       this.loadData();
@@ -147,7 +148,7 @@ export class Sidebar {
         ${
           isExpanded
             ? `<div class="pl-6" data-demo-list="${project.id}">
-          <div class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">${t('sidebar.loading')}</div>
+          ${this._renderCachedDemos(project.id)}
         </div>`
             : ''
         }
@@ -168,6 +169,14 @@ export class Sidebar {
     `;
   }
 
+  _renderCachedDemos(projectId) {
+    const demos = this.projectDemosCache[projectId];
+    if (!demos) return ''; // not yet loaded — show nothing
+    if (demos.length === 0)
+      return `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">${t('sidebar.no_demos')}</p>`;
+    return demos.map((d) => this.renderDemoItem(d, true)).join('');
+  }
+
   async bindContentEvents() {
     // Expand/collapse project
     this.container.querySelectorAll('[data-expand]').forEach((btn) => {
@@ -177,18 +186,15 @@ export class Sidebar {
         const projectId = btn.dataset.expand;
         if (this.expandedProjects.has(projectId)) {
           this.expandedProjects.delete(projectId);
+          delete this.projectDemosCache[projectId];
+          this.renderContent();
         } else {
           this.expandedProjects.add(projectId);
-          // Pre-load demos for this project
+          // Load demos then cache and re-render (no loading flash)
           const demos = await getDemosByProject(projectId);
-          const listEl = this.container.querySelector(`[data-demo-list="${projectId}"]`);
-          if (listEl) {
-            listEl.innerHTML = demos.length
-              ? demos.map((d) => this.renderDemoItem(d, true)).join('')
-              : `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">${t('sidebar.no_demos')}</p>`;
-          }
+          this.projectDemosCache[projectId] = demos;
+          this.renderContent();
         }
-        this.renderContent();
       });
     });
 

@@ -7,17 +7,6 @@ import { confirm } from 'components/modal.js';
 import { toast } from 'components/toast.js';
 import { t } from 'utils/i18n.js';
 
-const PRESET_COLORS = [
-  '#6366f1', // indigo
-  '#8b5cf6', // violet
-  '#ec4899', // pink
-  '#ef4444', // red
-  '#f97316', // orange
-  '#eab308', // yellow
-  '#22c55e', // green
-  '#06b6d4', // cyan
-];
-
 function escapeHtml(str) {
   return String(str || '')
     .replace(/&/g, '&amp;')
@@ -77,7 +66,6 @@ export class ProjectView {
 
   render() {
     const p = this.project;
-    const accentStyle = p.color ? `color:${p.color};` : '';
     const tags = p.tags || [];
 
     this.container.innerHTML = `
@@ -86,7 +74,7 @@ export class ProjectView {
         <div class="project-header px-6 pt-6 pb-5 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
           <!-- Title row -->
           <div class="flex items-start gap-3 mb-4">
-            <svg class="w-7 h-7 mt-0.5 shrink-0" style="${accentStyle}"><use href="icons/sprite.svg#icon-folder-open"></use></svg>
+            <svg class="w-7 h-7 mt-0.5 shrink-0 text-[var(--color-accent)]"><use href="icons/sprite.svg#icon-folder-open"></use></svg>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 group">
                 <h1 class="project-title text-xl font-bold text-[var(--color-text-primary)] leading-tight cursor-pointer hover:text-[var(--color-accent)] transition-colors truncate"
@@ -117,7 +105,7 @@ export class ProjectView {
             <textarea
               class="project-notes-input w-full text-sm bg-transparent border border-transparent rounded-lg outline-none text-[var(--color-text-secondary)] px-0 py-0 resize-none leading-relaxed cursor-pointer hover:text-[var(--color-text-primary)] transition-colors placeholder:italic placeholder:text-[var(--color-text-tertiary)]"
               id="project-notes-input"
-              rows="3"
+              rows="1"
               placeholder="${t('project.notes.placeholder')}"
               aria-label="${t('project.notes.placeholder')}"
               readonly
@@ -149,34 +137,6 @@ export class ProjectView {
               <input type="text" class="text-sm px-2 py-1 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg-primary)] outline-none text-[var(--color-text-primary)] w-36"
                      id="tag-text-input" placeholder="输入标签…" maxlength="32" />
               <span class="text-xs text-[var(--color-text-tertiary)] ml-1">Enter 确认 · Esc 取消</span>
-            </div>
-          </div>
-
-          <!-- Color picker -->
-          <div class="flex items-center gap-3 mb-4">
-            <span class="text-xs text-[var(--color-text-tertiary)] shrink-0">${t('project.color')}</span>
-            <div class="flex items-center gap-1.5" id="color-swatches">
-              ${PRESET_COLORS.map(
-                (color) => `
-                <button
-                  class="color-swatch w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-[var(--color-accent)]"
-                  style="background:${color}; border-color:${p.color === color ? color : 'transparent'};"
-                  data-color="${color}"
-                  title="${color}"
-                  aria-label="选择颜色 ${color}"
-                  ${p.color === color ? 'aria-pressed="true"' : ''}
-                ></button>
-              `
-              ).join('')}
-              <button
-                class="color-swatch w-5 h-5 rounded-full border-2 border-dashed border-[var(--color-border)] hover:border-[var(--color-text-tertiary)] transition-colors flex items-center justify-center"
-                data-color=""
-                title="无颜色"
-                aria-label="清除颜色"
-                ${!p.color ? 'aria-pressed="true"' : ''}
-              >
-                <svg class="w-3 h-3 text-[var(--color-text-tertiary)]"><use href="icons/sprite.svg#icon-close"></use></svg>
-              </button>
             </div>
           </div>
 
@@ -352,6 +312,13 @@ export class ProjectView {
     // Notes editing — single textarea, readonly by default
     const notesInput = this.container.querySelector('#project-notes-input');
 
+    const autoResize = () => {
+      notesInput.style.height = 'auto';
+      notesInput.style.height = notesInput.scrollHeight + 'px';
+    };
+    autoResize(); // set initial height based on content
+    notesInput.addEventListener('input', autoResize);
+
     const startNotesEdit = () => {
       notesInput.removeAttribute('readonly');
       notesInput.classList.remove(
@@ -413,30 +380,6 @@ export class ProjectView {
 
     // Tags
     this.bindTagEvents();
-
-    // Color swatches
-    this.container.querySelectorAll('.color-swatch').forEach((swatch) => {
-      swatch.addEventListener('click', async () => {
-        const color = swatch.dataset.color || null;
-        try {
-          this.project = await updateProject(this.project.id, { color });
-          // Update swatch active states
-          this.container.querySelectorAll('.color-swatch').forEach((s) => {
-            const c = s.dataset.color || null;
-            s.style.borderColor = c === color && color ? color : 'transparent';
-            if (!c && !color) s.style.borderColor = 'var(--color-accent)';
-            s.setAttribute('aria-pressed', String(c === color));
-          });
-          // Update folder icon color
-          const folderIcon = this.container.querySelector('.project-header svg');
-          if (folderIcon) folderIcon.style.color = color || '';
-          appState.notifyDataChanged('project');
-        } catch (err) {
-          console.error('Update color error:', err);
-          toast.error('更新失败');
-        }
-      });
-    });
 
     // Delete project
     this.container.querySelector('#delete-project-btn').addEventListener('click', () => {

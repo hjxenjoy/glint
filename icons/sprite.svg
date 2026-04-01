@@ -15,8 +15,8 @@
   </symbol>
 
   <symbol id="icon-folder-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v1"/>
-    <path d="M3 13h18l-2 8H5l-2-8z"/>
+    <path d="M3 9a2 2 0 012-2h4l2 2h10a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+    <path d="M3 11h18"/>
   </symbol>
 
   <symbol id="icon-folder-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
