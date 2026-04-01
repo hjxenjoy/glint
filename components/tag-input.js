@@ -1,4 +1,5 @@
 import { t } from 'utils/i18n.js';
+import { icon } from 'utils/icons.js';
 
 export class TagInput {
   constructor(container, { value = [], onChange = null, placeholder = '' } = {}) {
@@ -30,7 +31,7 @@ export class TagInput {
           <span class="tag flex items-center gap-1">
             ${escapeHtml(tag)}
             <button data-remove="${escapeHtml(tag)}" class="opacity-60 hover:opacity-100" aria-label="${escapeHtml(t('common.delete'))}">
-              <svg class="w-3 h-3"><use href="icons/sprite.svg#icon-close"></use></svg>
+              ${icon('x', 'w-3 h-3')}
             </button>
           </span>
         `

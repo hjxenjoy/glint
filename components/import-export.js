@@ -6,6 +6,7 @@ import { exportAsJSON, triggerDownload, packExport, unpackImport } from 'utils/z
 import { getStorageEstimate, requestPersistence, formatBytes } from 'utils/storage-estimate.js';
 import { toast } from 'components/toast.js';
 import { t, getLocale, setLocale, getSupportedLocales } from 'utils/i18n.js';
+import { icon } from 'utils/icons.js';
 
 const TABS = () => [
   { id: 'import-export', label: t('settings.tab.import_export') },
@@ -94,11 +95,11 @@ export class SettingsView {
         <p class="text-sm text-[var(--color-text-secondary)] mb-4">${t('settings.export.description')}</p>
         <div class="flex gap-3 flex-wrap">
           <button id="export-json" class="btn btn-primary gap-2">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-export"></use></svg>
+            ${icon('upload-simple', 'w-4 h-4')}
             ${t('settings.export.json')}
           </button>
           <button id="export-zip" class="btn btn-secondary gap-2">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-download"></use></svg>
+            ${icon('download', 'w-4 h-4')}
             ${t('settings.export.zip')}
           </button>
         </div>
@@ -115,9 +116,7 @@ export class SettingsView {
         <div id="import-dropzone"
              class="border-2 border-dashed border-[var(--color-border)] rounded-xl p-8 text-center cursor-pointer
                     hover:border-[var(--color-accent)] hover:bg-[var(--color-accent-subtle)] transition-colors">
-          <svg class="w-10 h-10 mx-auto mb-3 text-[var(--color-text-tertiary)]">
-            <use href="icons/sprite.svg#icon-upload"></use>
-          </svg>
+          <span class="w-10 h-10 mx-auto mb-3 text-[var(--color-text-tertiary)] flex justify-center">${icon('upload-simple', 'w-10 h-10')}</span>
           <p class="text-sm text-[var(--color-text-secondary)]">
             ${t('settings.import.drop_zone')}
           </p>
@@ -170,7 +169,7 @@ export class SettingsView {
         </div>
         <div id="persistence-status" class="text-sm text-[var(--color-text-secondary)] mb-4"></div>
         <button id="request-persist-btn" class="btn btn-secondary gap-2">
-          <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-check"></use></svg>
+          ${icon('check', 'w-4 h-4')}
           ${t('settings.storage.request_persist')}
         </button>
       </div>
@@ -183,9 +182,7 @@ export class SettingsView {
     return `
       <div class="card p-6">
         <div class="flex items-center gap-3 mb-4">
-          <svg class="w-8 h-8 text-[var(--color-accent)]">
-            <use href="icons/sprite.svg#icon-sparkle"></use>
-          </svg>
+          <span class="text-[var(--color-accent)]">${icon('sparkle', 'w-8 h-8')}</span>
           <div>
             <h2 class="text-xl font-bold text-[var(--color-text-primary)]">Glint</h2>
             <span class="text-xs text-[var(--color-text-tertiary)]">${t('settings.about.version')} v1.0.0</span>
@@ -199,19 +196,19 @@ export class SettingsView {
           <h4 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">${t('settings.about.tech_stack')}</h4>
           <ul class="space-y-1.5 text-sm text-[var(--color-text-secondary)]">
             <li class="flex items-center gap-2">
-              <svg class="w-3.5 h-3.5 text-[var(--color-accent)]"><use href="icons/sprite.svg#icon-check"></use></svg>
+              <span class="text-[var(--color-accent)]">${icon('check', 'w-3.5 h-3.5')}</span>
               Vanilla JS (ES2022+)
             </li>
             <li class="flex items-center gap-2">
-              <svg class="w-3.5 h-3.5 text-[var(--color-accent)]"><use href="icons/sprite.svg#icon-check"></use></svg>
+              <span class="text-[var(--color-accent)]">${icon('check', 'w-3.5 h-3.5')}</span>
               IndexedDB
             </li>
             <li class="flex items-center gap-2">
-              <svg class="w-3.5 h-3.5 text-[var(--color-accent)]"><use href="icons/sprite.svg#icon-check"></use></svg>
+              <span class="text-[var(--color-accent)]">${icon('check', 'w-3.5 h-3.5')}</span>
               Service Worker
             </li>
             <li class="flex items-center gap-2">
-              <svg class="w-3.5 h-3.5 text-[var(--color-accent)]"><use href="icons/sprite.svg#icon-check"></use></svg>
+              <span class="text-[var(--color-accent)]">${icon('check', 'w-3.5 h-3.5')}</span>
               Tailwind CSS
             </li>
           </ul>
@@ -219,7 +216,7 @@ export class SettingsView {
 
         <div>
           <a href="#" class="btn btn-secondary gap-2 inline-flex">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-github"></use></svg>
+            ${icon('arrow-square-out', 'w-4 h-4')}
             GitHub
           </a>
         </div>
@@ -606,7 +603,7 @@ export class SettingsView {
       const persisted = estimate.persisted ?? false;
       persistStatusEl.innerHTML = persisted
         ? `<span class="text-green-600 dark:text-green-400 flex items-center gap-1">
-             <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-check"></use></svg>
+             ${icon('check', 'w-3.5 h-3.5')}
              ${t('settings.storage.persistent')}
            </span>`
         : `<span class="text-[var(--color-text-secondary)]">${t('settings.storage.not_persistent')}</span>`;

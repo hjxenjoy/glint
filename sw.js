@@ -1,6 +1,6 @@
-const CACHE_VERSION = 'v2';
-const SHELL_CACHE = 'glint-shell-v2';
-const CDN_CACHE = 'glint-cdn-v2';
+const CACHE_VERSION = 'v3';
+const SHELL_CACHE = 'glint-shell-v3';
+const CDN_CACHE = 'glint-cdn-v3';
 
 const SHELL_FILES = [
   '/',
@@ -20,6 +20,7 @@ const SHELL_FILES = [
   '/db/search.js',
   '/store/app-state.js',
   '/utils/id.js',
+  '/utils/icons.js',
   '/utils/i18n.js',
   '/utils/base64.js',
   '/utils/storage-estimate.js',
@@ -41,7 +42,6 @@ const SHELL_FILES = [
   '/components/tag-input.js',
   '/components/modal.js',
   '/components/toast.js',
-  '/icons/sprite.svg',
 ];
 
 // Only cdn.jsdelivr.net remains (for fflate, loaded on demand for import/export)

@@ -6,6 +6,7 @@ import { formatRelative } from 'utils/date.js';
 import { confirm } from 'components/modal.js';
 import { toast } from 'components/toast.js';
 import { t } from 'utils/i18n.js';
+import { icon } from 'utils/icons.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -81,13 +82,13 @@ function renderDemoCard(demo, projectsMap) {
            title="${t('demo.edit')}"
            data-action="edit"
            data-demo-id="${escapeHtml(demo.id)}">
-          <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-pencil"></use></svg>
+          ${icon('pencil-simple', 'w-3.5 h-3.5')}
         </a>
         <button class="btn btn-icon w-7 h-7 bg-[var(--color-bg-primary)]/90 backdrop-blur-sm border border-[var(--color-border)] hover:border-red-400 hover:text-red-400 shadow-sm"
                 title="${t('demo.delete')}"
                 data-action="delete"
                 data-demo-id="${escapeHtml(demo.id)}">
-          <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-trash"></use></svg>
+          ${icon('trash', 'w-3.5 h-3.5')}
         </button>
       </div>
     </div>
@@ -187,7 +188,7 @@ export class HomeView {
             <p class="text-sm text-[var(--color-text-secondary)]">${t('home.subtitle')}</p>
           </div>
           <a href="#/demos/new" class="btn btn-primary shrink-0 gap-2">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-plus"></use></svg>
+            ${icon('plus', 'w-4 h-4')}
             ${t('home.new_demo')}
           </a>
         </div>
@@ -236,14 +237,14 @@ export class HomeView {
     return `
       <div class="flex flex-col items-center justify-center py-24 text-center">
         <div class="w-16 h-16 rounded-2xl bg-[var(--color-accent)]/10 flex items-center justify-center mb-5">
-          <svg class="w-8 h-8 text-[var(--color-accent)]"><use href="icons/sprite.svg#icon-sparkles"></use></svg>
+          ${icon('sparkle', 'w-8 h-8 text-[var(--color-accent)]')}
         </div>
         <h2 class="text-xl font-semibold text-[var(--color-text-primary)] mb-2">${t('home.empty.title')}</h2>
         <p class="text-sm text-[var(--color-text-secondary)] mb-6 max-w-xs">
           ${t('home.empty.description')}
         </p>
         <a href="#/demos/new" class="btn btn-primary gap-2">
-          <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-plus"></use></svg>
+          ${icon('plus', 'w-4 h-4')}
           ${t('home.empty.cta')}
         </a>
       </div>
@@ -256,11 +257,8 @@ export class HomeView {
       <a href="#/projects/${escapeHtml(project.id)}"
          class="block rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4 hover:border-[var(--color-accent)]/50 hover:shadow-md transition-all duration-200">
         <div class="flex items-start gap-3">
-          <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-               style="background:${project.color ? project.color + '22' : 'var(--color-bg-tertiary)'}">
-            <svg class="w-4 h-4" style="color:${project.color || 'var(--color-accent)'}">
-              <use href="icons/sprite.svg#icon-folder"></use>
-            </svg>
+          <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-[var(--color-bg-tertiary)]">
+            ${icon('folder', 'w-4 h-4 text-[var(--color-accent)]')}
           </div>
           <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold text-[var(--color-text-primary)] truncate">${escapeHtml(project.title)}</p>
@@ -419,7 +417,7 @@ export class AllDemosView {
             <p class="text-sm text-[var(--color-text-secondary)] mt-0.5">${t('demos.count', { n: this.allDemos.length })}</p>
           </div>
           <a href="#/demos/new" class="btn btn-primary shrink-0 gap-2">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-plus"></use></svg>
+            ${icon('plus', 'w-4 h-4')}
             ${t('demos.all_new_demo')}
           </a>
         </div>
@@ -428,9 +426,9 @@ export class AllDemosView {
         <div class="flex flex-wrap items-center gap-2 mb-6">
           <!-- Search -->
           <div class="relative flex-1 min-w-48">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-tertiary)] pointer-events-none">
-              <use href="icons/sprite.svg#icon-search"></use>
-            </svg>
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-text-tertiary)]">
+              ${icon('magnifying-glass', 'w-4 h-4')}
+            </span>
             <input id="filter-search"
                    type="search"
                    placeholder="${t('demos.filter.search')}"
@@ -461,7 +459,7 @@ export class AllDemosView {
           <button id="toggle-group"
                   class="h-9 px-3 rounded-lg border text-sm transition-colors gap-2 flex items-center
                          ${this.groupByProject ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]'}">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-folder"></use></svg>
+            ${icon('folder', 'w-4 h-4')}
             ${t('demos.filter.group')}
           </button>
         </div>
@@ -536,7 +534,7 @@ export class AllDemosView {
     return `
       <div class="flex flex-col items-center justify-center py-20 text-center">
         <div class="w-14 h-14 rounded-2xl bg-[var(--color-bg-tertiary)] flex items-center justify-center mb-4">
-          <svg class="w-7 h-7 text-[var(--color-text-tertiary)]"><use href="icons/sprite.svg#icon-${hasFilters ? 'search' : 'sparkles'}"></use></svg>
+          ${icon(hasFilters ? 'magnifying-glass' : 'sparkle', 'w-7 h-7 text-[var(--color-text-tertiary)]')}
         </div>
         ${
           hasFilters
@@ -545,7 +543,7 @@ export class AllDemosView {
             : `<h2 class="text-base font-semibold text-[var(--color-text-primary)] mb-1">${t('demos.empty.no_demos')}</h2>
                <p class="text-sm text-[var(--color-text-secondary)] mb-5">新建你的第一个 Demo 开始使用吧</p>
                <a href="#/demos/new" class="btn btn-primary gap-2">
-                 <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-plus"></use></svg>
+                 ${icon('plus', 'w-4 h-4')}
                  ${t('demos.all_new_demo')}
                </a>`
         }

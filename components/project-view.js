@@ -6,6 +6,7 @@ import { formatRelative, formatFull } from 'utils/date.js';
 import { confirm } from 'components/modal.js';
 import { toast } from 'components/toast.js';
 import { t } from 'utils/i18n.js';
+import { icon } from 'utils/icons.js';
 
 function escapeHtml(str) {
   return String(str || '')
@@ -49,6 +50,9 @@ export class ProjectView {
         return;
       }
 
+      // Sort demos A-Z
+      this.demos.sort((a, b) => a.title.localeCompare(b.title, 'zh'));
+
       this.render();
     } catch (err) {
       console.error('ProjectView init error:', err);
@@ -66,7 +70,6 @@ export class ProjectView {
 
   render() {
     const p = this.project;
-    const tags = p.tags || [];
 
     this.container.innerHTML = `
       <div class="project-view flex flex-col h-full overflow-y-auto">
@@ -74,7 +77,7 @@ export class ProjectView {
         <div class="project-header px-6 pt-6 pb-5 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
           <!-- Title row -->
           <div class="flex items-start gap-3 mb-4">
-            <svg class="w-7 h-7 mt-0.5 shrink-0 text-[var(--color-accent)]"><use href="icons/sprite.svg#icon-folder-open"></use></svg>
+            ${icon('folder-open', 'w-7 h-7 mt-0.5 shrink-0 text-[var(--color-accent)]')}
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2 group">
                 <h1 class="project-title text-xl font-bold text-[var(--color-text-primary)] leading-tight cursor-pointer hover:text-[var(--color-accent)] transition-colors truncate"
@@ -82,8 +85,9 @@ export class ProjectView {
                     title="${escapeHtml(p.title)}">
                   ${escapeHtml(p.title)}
                 </h1>
-                <button class="btn btn-icon btn-ghost w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" id="edit-title-btn" title="${t('project.edit_title')}">
-                  <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-edit"></use></svg>
+                <button class="btn btn-icon btn-ghost w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                        id="edit-title-btn" title="${t('project.edit_title')}">
+                  ${icon('pencil-simple', 'w-3.5 h-3.5')}
                 </button>
               </div>
               <input
@@ -95,49 +99,21 @@ export class ProjectView {
               />
             </div>
             <button class="btn btn-danger btn-sm gap-1.5 shrink-0" id="delete-project-btn">
-              <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-trash"></use></svg>
+              ${icon('trash', 'w-3.5 h-3.5')}
               ${t('project.delete')}
             </button>
           </div>
 
-          <!-- Notes / description -->
+          <!-- Description / notes -->
           <div class="mb-4">
             <textarea
               class="project-notes-input w-full text-sm bg-transparent border border-transparent rounded-lg outline-none text-[var(--color-text-secondary)] px-0 py-0 resize-none leading-relaxed cursor-pointer hover:text-[var(--color-text-primary)] transition-colors placeholder:italic placeholder:text-[var(--color-text-tertiary)]"
               id="project-notes-input"
               rows="1"
-              placeholder="${t('project.notes.placeholder')}"
-              aria-label="${t('project.notes.placeholder')}"
+              placeholder="${t('project.description.placeholder')}"
+              aria-label="${t('project.description')}"
               readonly
             >${escapeHtml((p.notes || '').trim())}</textarea>
-          </div>
-
-          <!-- Tags row -->
-          <div class="mb-4" id="tag-input-container">
-            <!-- TagInput will be mounted here if available -->
-            <div class="flex flex-wrap gap-1.5 items-center" id="tags-display">
-              ${tags
-                .map(
-                  (tag) => `
-                <span class="tag-chip inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] border border-[var(--color-border)]">
-                  ${escapeHtml(tag)}
-                  <button class="tag-remove-btn hover:text-[var(--color-danger)] transition-colors" data-tag="${escapeHtml(tag)}" aria-label="删除标签">
-                    <svg class="w-2.5 h-2.5"><use href="icons/sprite.svg#icon-close"></use></svg>
-                  </button>
-                </span>
-              `
-                )
-                .join('')}
-              <button class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border border-dashed border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors" id="add-tag-btn">
-                <svg class="w-2.5 h-2.5"><use href="icons/sprite.svg#icon-plus"></use></svg>
-                ${t('project.add_tag')}
-              </button>
-            </div>
-            <div class="hidden mt-2" id="tag-input-row">
-              <input type="text" class="text-sm px-2 py-1 rounded-lg border border-[var(--color-accent)] bg-[var(--color-bg-primary)] outline-none text-[var(--color-text-primary)] w-36"
-                     id="tag-text-input" placeholder="输入标签…" maxlength="32" />
-              <span class="text-xs text-[var(--color-text-tertiary)] ml-1">Enter 确认 · Esc 取消</span>
-            </div>
           </div>
 
           <!-- Meta info -->
@@ -148,18 +124,17 @@ export class ProjectView {
           </div>
         </div>
 
-        <!-- New Demo button + Demo grid -->
+        <!-- Demo list -->
         <div class="flex-1 px-6 py-5">
           <div class="flex items-center justify-between mb-5">
             <h2 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">Demo 列表</h2>
             <a href="#/demos/new?projectId=${escapeHtml(p.id)}"
                class="btn btn-primary btn-sm gap-1.5">
-              <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-plus"></use></svg>
+              ${icon('plus', 'w-3.5 h-3.5')}
               ${t('project.new_demo')}
             </a>
           </div>
 
-          <!-- Demo grid -->
           <div id="demo-grid">
             ${this.renderDemoGrid()}
           </div>
@@ -174,14 +149,14 @@ export class ProjectView {
     if (this.demos.length === 0) {
       return `
         <div class="flex flex-col items-center justify-center py-16 text-center gap-4">
-          <svg class="w-12 h-12 text-[var(--color-text-tertiary)] opacity-40"><use href="icons/sprite.svg#icon-file-code"></use></svg>
+          ${icon('file-code', 'w-12 h-12 text-[var(--color-text-tertiary)] opacity-40')}
           <div>
             <p class="text-sm text-[var(--color-text-secondary)] mb-1">${t('project.no_demos')}</p>
             <p class="text-xs text-[var(--color-text-tertiary)]">点击"${t('project.new_demo')}"开始创建</p>
           </div>
           <a href="#/demos/new?projectId=${escapeHtml(this.project.id)}"
              class="btn btn-primary btn-sm gap-1.5">
-            <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-plus"></use></svg>
+            ${icon('plus', 'w-3.5 h-3.5')}
             ${t('project.new_demo')}
           </a>
         </div>
@@ -196,40 +171,17 @@ export class ProjectView {
   }
 
   renderDemoCard(demo) {
-    const tags = demo.tags || [];
-    const fileCount = (demo.files || []).length;
     return `
       <div class="demo-card group relative flex flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] hover:border-[var(--color-accent)] hover:shadow-md transition-all duration-200 overflow-hidden"
            data-demo-id="${escapeHtml(demo.id)}">
-        <!-- Card body -->
         <a href="#/demos/${escapeHtml(demo.id)}" class="flex-1 p-4 block">
           <div class="flex items-start gap-2 mb-2">
-            <svg class="w-4 h-4 mt-0.5 shrink-0 text-[var(--color-accent)]"><use href="icons/sprite.svg#icon-file-code"></use></svg>
+            ${icon('file-code', 'w-4 h-4 mt-0.5 shrink-0 text-[var(--color-accent)]')}
             <h3 class="text-sm font-semibold text-[var(--color-text-primary)] leading-snug line-clamp-2 flex-1">${escapeHtml(demo.title)}</h3>
           </div>
           ${demo.notes ? `<p class="text-xs text-[var(--color-text-tertiary)] line-clamp-2 mb-2 leading-relaxed">${escapeHtml(demo.notes)}</p>` : ''}
-          ${
-            tags.length > 0
-              ? `
-            <div class="flex flex-wrap gap-1 mb-2">
-              ${tags
-                .slice(0, 3)
-                .map(
-                  (tag) => `
-                <span class="inline-block px-1.5 py-0.5 rounded text-[10px] bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)] border border-[var(--color-border)]">
-                  ${escapeHtml(tag)}
-                </span>
-              `
-                )
-                .join('')}
-              ${tags.length > 3 ? `<span class="text-[10px] text-[var(--color-text-tertiary)]">+${tags.length - 3}</span>` : ''}
-            </div>
-          `
-              : ''
-          }
         </a>
 
-        <!-- Card footer -->
         <div class="flex items-center justify-between px-4 py-2.5 border-t border-[var(--color-border)] bg-[var(--color-bg-tertiary)]">
           <span class="text-[10px] text-[var(--color-text-tertiary)]" title="${formatFull(demo.updatedAt)}">
             ${formatRelative(demo.updatedAt)}
@@ -238,13 +190,13 @@ export class ProjectView {
             <a href="#/demos/${escapeHtml(demo.id)}/edit"
                class="btn btn-icon btn-ghost w-6 h-6"
                title="${t('demo.edit')}">
-              <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-edit"></use></svg>
+              ${icon('pencil-simple', 'w-3.5 h-3.5')}
             </a>
             <button class="btn btn-icon btn-ghost w-6 h-6 hover:text-[var(--color-danger)] demo-delete-btn"
                     data-demo-id="${escapeHtml(demo.id)}"
                     data-demo-title="${escapeHtml(demo.title)}"
                     title="${t('demo.delete')}">
-              <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-trash"></use></svg>
+              ${icon('trash', 'w-3.5 h-3.5')}
             </button>
           </div>
         </div>
@@ -309,14 +261,14 @@ export class ProjectView {
       }
     });
 
-    // Notes editing — single textarea, readonly by default
+    // Notes/description editing
     const notesInput = this.container.querySelector('#project-notes-input');
 
     const autoResize = () => {
       notesInput.style.height = 'auto';
       notesInput.style.height = notesInput.scrollHeight + 'px';
     };
-    autoResize(); // set initial height based on content
+    autoResize();
     notesInput.addEventListener('input', autoResize);
 
     const startNotesEdit = () => {
@@ -378,9 +330,6 @@ export class ProjectView {
       }
     });
 
-    // Tags
-    this.bindTagEvents();
-
     // Delete project
     this.container.querySelector('#delete-project-btn').addEventListener('click', () => {
       this.handleDeleteProject();
@@ -396,104 +345,20 @@ export class ProjectView {
     });
   }
 
-  bindTagEvents() {
-    const addTagBtn = this.container.querySelector('#add-tag-btn');
-    const tagInputRow = this.container.querySelector('#tag-input-row');
-    const tagTextInput = this.container.querySelector('#tag-text-input');
-
-    addTagBtn?.addEventListener('click', () => {
-      tagInputRow.classList.remove('hidden');
-      tagTextInput.focus();
-    });
-
-    tagTextInput?.addEventListener('keydown', async (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const newTag = tagTextInput.value.trim();
-        if (newTag && !(this.project.tags || []).includes(newTag)) {
-          await this.saveTag([...(this.project.tags || []), newTag]);
-        }
-        tagTextInput.value = '';
-        tagInputRow.classList.add('hidden');
-      }
-      if (e.key === 'Escape') {
-        tagTextInput.value = '';
-        tagInputRow.classList.add('hidden');
-      }
-    });
-
-    tagTextInput?.addEventListener('blur', () => {
-      setTimeout(() => {
-        tagTextInput.value = '';
-        tagInputRow.classList.add('hidden');
-      }, 150);
-    });
-
-    // Remove tag buttons
-    this.container.querySelectorAll('.tag-remove-btn').forEach((btn) => {
-      btn.addEventListener('click', async () => {
-        const tagToRemove = btn.dataset.tag;
-        const newTags = (this.project.tags || []).filter((tag) => tag !== tagToRemove);
-        await this.saveTag(newTags);
-      });
-    });
-  }
-
-  async saveTag(newTags) {
-    try {
-      this.project = await updateProject(this.project.id, { tags: newTags });
-      this.refreshTagsDisplay();
-      appState.notifyDataChanged('project');
-    } catch (err) {
-      console.error('Update tags error:', err);
-      toast.error('更新失败');
-    }
-  }
-
-  refreshTagsDisplay() {
-    const tagsDisplay = this.container.querySelector('#tags-display');
-    if (!tagsDisplay) return;
-    const tags = this.project.tags || [];
-    tagsDisplay.innerHTML = `
-      ${tags
-        .map(
-          (tag) => `
-        <span class="tag-chip inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] border border-[var(--color-border)]">
-          ${escapeHtml(tag)}
-          <button class="tag-remove-btn hover:text-[var(--color-danger)] transition-colors" data-tag="${escapeHtml(tag)}" aria-label="删除标签">
-            <svg class="w-2.5 h-2.5"><use href="icons/sprite.svg#icon-close"></use></svg>
-          </button>
-        </span>
-      `
-        )
-        .join('')}
-      <button class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border border-dashed border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors" id="add-tag-btn">
-        <svg class="w-2.5 h-2.5"><use href="icons/sprite.svg#icon-plus"></use></svg>
-        ${t('project.add_tag')}
-      </button>
-    `;
-    // Re-bind tag events after re-render
-    this.bindTagEvents();
-  }
-
   async handleDeleteProject() {
     const confirmed = await confirm({
       title: t('project.delete.confirm.title'),
       message: t('project.delete.confirm.message'),
       confirmText: t('project.delete'),
-      cancelText: '取消',
+      cancelText: t('modal.cancel'),
       danger: true,
     });
 
     if (!confirmed) return;
 
     try {
-      // Delete project record (does not cascade)
       await deleteProject(this.project.id);
-
-      // Detach all demos from this project (set projectId = null)
       await Promise.all(this.demos.map((demo) => updateDemo(demo.id, { projectId: null })));
-
       appState.notifyDataChanged('project');
       toast.success('项目已删除，Demo 已变为独立状态');
       appState.navigate('#/');
@@ -506,9 +371,9 @@ export class ProjectView {
   async handleDeleteDemo(demoId, demoTitle) {
     const confirmed = await confirm({
       title: t('demo.delete.confirm.title'),
-      message: t('demo.delete.confirm.message', { title: demoTitle }),
+      message: t('demo.delete.confirm.message'),
       confirmText: t('demo.delete'),
-      cancelText: '取消',
+      cancelText: t('modal.cancel'),
       danger: true,
     });
 
@@ -519,15 +384,16 @@ export class ProjectView {
       await deleteDemo(demoId);
       this.demos = this.demos.filter((d) => d.id !== demoId);
       const demoGrid = this.container.querySelector('#demo-grid');
-      if (demoGrid) demoGrid.innerHTML = this.renderDemoGrid();
-      // Re-bind demo delete buttons
-      this.container.querySelectorAll('.demo-delete-btn').forEach((btn) => {
-        btn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          this.handleDeleteDemo(btn.dataset.demoId, btn.dataset.demoTitle);
+      if (demoGrid) {
+        demoGrid.innerHTML = this.renderDemoGrid();
+        this.container.querySelectorAll('.demo-delete-btn').forEach((btn) => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.handleDeleteDemo(btn.dataset.demoId, btn.dataset.demoTitle);
+          });
         });
-      });
+      }
       appState.notifyDataChanged('demo');
       toast.success('Demo 已删除');
     } catch (err) {
@@ -539,9 +405,9 @@ export class ProjectView {
   renderError(message) {
     this.container.innerHTML = `
       <div class="flex flex-col items-center justify-center h-full gap-4 text-[var(--color-text-tertiary)]">
-        <svg class="w-12 h-12 opacity-40"><use href="icons/sprite.svg#icon-alert-circle"></use></svg>
+        ${icon('warning', 'w-12 h-12 opacity-40')}
         <p class="text-sm">${escapeHtml(message)}</p>
-        <a href="#/" class="btn btn-secondary btn-sm">返回首页</a>
+        <a href="#/" class="btn btn-secondary btn-sm">${t('common.back')}</a>
       </div>
     `;
   }

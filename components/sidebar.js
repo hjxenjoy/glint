@@ -1,8 +1,9 @@
 import { appState } from 'store/app-state.js';
 import { getAllProjects, createProject } from 'db/projects.js';
-import { getDemosByProject, getStandaloneDemos } from 'db/demos.js';
+import { getAllDemos } from 'db/demos.js';
 import { getStorageEstimate, formatBytes } from 'utils/storage-estimate.js';
 import { t } from 'utils/i18n.js';
+import { icon } from 'utils/icons.js';
 import { Modal } from 'components/modal.js';
 import { toast } from 'components/toast.js';
 
@@ -10,9 +11,9 @@ export class Sidebar {
   constructor(container) {
     this.container = container;
     this.projects = [];
-    this.standaloneDemos = [];
-    this.expandedProjects = new Set();
-    this.projectDemosCache = {}; // projectId -> demos[]
+    this.demosByProject = new Map(); // projectId => demos[]
+    this.uncategorizedDemos = [];
+
     this._localeHandler = () => {
       this.render();
       this.loadData();
@@ -23,21 +24,39 @@ export class Sidebar {
 
     appState.addEventListener('data-changed', () => this.loadData());
     appState.addEventListener('change', (e) => {
-      if (
-        e.detail.key === 'currentView' ||
-        e.detail.key === 'selectedDemoId' ||
-        e.detail.key === 'selectedProjectId'
-      ) {
+      if (['currentView', 'selectedDemoId', 'selectedProjectId'].includes(e.detail.key)) {
         this.updateActiveState();
       }
     });
   }
 
   async loadData() {
-    [this.projects, this.standaloneDemos] = await Promise.all([
-      getAllProjects(),
-      getStandaloneDemos(),
-    ]);
+    const [projects, allDemos] = await Promise.all([getAllProjects(), getAllDemos()]);
+
+    // Sort projects A-Z
+    this.projects = projects.sort((a, b) => a.title.localeCompare(b.title, 'zh'));
+
+    // Group demos by project
+    this.demosByProject = new Map();
+    this.uncategorizedDemos = [];
+
+    for (const demo of allDemos) {
+      if (demo.projectId) {
+        if (!this.demosByProject.has(demo.projectId)) {
+          this.demosByProject.set(demo.projectId, []);
+        }
+        this.demosByProject.get(demo.projectId).push(demo);
+      } else {
+        this.uncategorizedDemos.push(demo);
+      }
+    }
+
+    // Sort each group A-Z
+    for (const demos of this.demosByProject.values()) {
+      demos.sort((a, b) => a.title.localeCompare(b.title, 'zh'));
+    }
+    this.uncategorizedDemos.sort((a, b) => a.title.localeCompare(b.title, 'zh'));
+
     this.renderContent();
     this.loadStorageInfo();
   }
@@ -57,20 +76,20 @@ export class Sidebar {
       <div class="flex flex-col h-full">
         <!-- New Demo button -->
         <div class="p-3 border-b border-[var(--color-border)]">
-          <a href="#/demos/new" class="btn btn-primary w-full justify-center gap-2">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-plus"></use></svg>
+          <button type="button" id="new-demo-btn" class="btn btn-primary w-full justify-center gap-2">
+            ${icon('plus', 'w-4 h-4')}
             ${t('sidebar.new_demo')}
-          </a>
+          </button>
         </div>
 
         <!-- Navigation -->
         <nav class="p-2 border-b border-[var(--color-border)]">
           <a href="#/" class="sidebar-nav-item" data-view="home">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-home"></use></svg>
+            ${icon('house', 'w-4 h-4')}
             <span>${t('sidebar.home')}</span>
           </a>
           <a href="#/demos" class="sidebar-nav-item" data-view="all-demos">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-grid"></use></svg>
+            ${icon('squares-four', 'w-4 h-4')}
             <span>${t('sidebar.all_demos')}</span>
           </a>
         </nav>
@@ -93,7 +112,10 @@ export class Sidebar {
       </div>
     `;
 
-    this.bindNavEvents();
+    this.container.querySelector('#new-demo-btn')?.addEventListener('click', () => {
+      appState.navigate('#/demos/new');
+    });
+
     this.renderContent();
   }
 
@@ -101,104 +123,75 @@ export class Sidebar {
     const content = this.container.querySelector('#sidebar-content');
     if (!content) return;
 
-    let html = '';
-
-    // Projects section
-    html += `
+    let html = `
       <div class="p-2">
         <div class="flex items-center justify-between px-2 py-1 mb-1">
           <span class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">${t('sidebar.projects')}</span>
           <button type="button" class="btn btn-icon btn-ghost" title="${t('sidebar.new_project')}" id="new-project-btn">
-            <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-folder-plus"></use></svg>
+            ${icon('folder-plus', 'w-3.5 h-3.5')}
           </button>
         </div>
-        ${this.projects.length === 0 ? `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">${t('sidebar.no_projects')}</p>` : ''}
-        ${this.projects.map((p) => this.renderProjectItem(p)).join('')}
-      </div>
     `;
 
-    // Standalone demos section
-    if (this.standaloneDemos.length > 0) {
+    if (this.projects.length === 0 && this.uncategorizedDemos.length === 0) {
+      html += `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">${t('sidebar.no_projects')}</p>`;
+    }
+
+    for (const project of this.projects) {
+      const demos = this.demosByProject.get(project.id) || [];
+      html += this._renderProjectGroup(project, demos);
+    }
+
+    if (this.uncategorizedDemos.length > 0) {
       html += `
-        <div class="p-2 border-t border-[var(--color-border)]">
-          <div class="px-2 py-1 mb-1">
-            <span class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">${t('sidebar.standalone_demos')}</span>
+        <div class="mt-1 pt-1 border-t border-[var(--color-border)]">
+          <div class="px-2 py-1 mb-0.5">
+            <span class="text-xs font-medium text-[var(--color-text-tertiary)]">${t('project.uncategorized')}</span>
           </div>
-          ${this.standaloneDemos.map((d) => this.renderDemoItem(d)).join('')}
+          ${this.uncategorizedDemos.map((d) => this._renderDemoItem(d)).join('')}
         </div>
       `;
     }
 
+    html += `</div>`;
     content.innerHTML = html;
-    this.bindContentEvents();
+    this._bindContentEvents();
     this.updateActiveState();
   }
 
-  renderProjectItem(project) {
-    const isExpanded = this.expandedProjects.has(project.id);
+  _renderProjectGroup(project, demos) {
     return `
-      <div class="sidebar-project" data-project-id="${project.id}">
-        <div class="sidebar-nav-item group" data-view="project" data-id="${project.id}">
-          <button class="sidebar-expand-btn p-0.5 rounded hover:bg-[var(--color-bg-hover)] transition-colors" data-expand="${project.id}" aria-label="展开">
-            <svg class="w-3.5 h-3.5 transition-transform ${isExpanded ? 'rotate-90' : ''}"><use href="icons/sprite.svg#icon-chevron-right"></use></svg>
-          </button>
-          <svg class="w-4 h-4 text-[var(--color-accent)]"><use href="icons/sprite.svg#icon-folder${isExpanded ? '-open' : ''}"></use></svg>
-          <a href="#/projects/${project.id}" class="flex-1 truncate text-sm">${escapeHtml(project.title)}</a>
+      <div class="mb-0.5" data-project-id="${project.id}">
+        <a href="#/projects/${project.id}"
+           class="sidebar-nav-item group"
+           data-view="project" data-id="${project.id}">
+          ${icon('folder', 'w-4 h-4 text-[var(--color-accent)] shrink-0')}
+          <span class="flex-1 truncate text-sm">${escapeHtml(project.title)}</span>
+        </a>
+        <div class="pl-5">
+          ${
+            demos.length === 0
+              ? `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-0.5">${t('sidebar.no_demos')}</p>`
+              : demos.map((d) => this._renderDemoItem(d)).join('')
+          }
         </div>
-        ${
-          isExpanded
-            ? `<div class="pl-6" data-demo-list="${project.id}">
-          ${this._renderCachedDemos(project.id)}
-        </div>`
-            : ''
-        }
       </div>
     `;
   }
 
-  renderDemoItem(demo, indent = false) {
-    const currentDemoId = appState.get('selectedDemoId');
-    const isActive = currentDemoId === demo.id;
+  _renderDemoItem(demo) {
+    const isActive = appState.get('selectedDemoId') === demo.id;
     return `
       <a href="#/demos/${demo.id}"
-         class="sidebar-nav-item text-sm ${isActive ? 'active' : ''} ${indent ? 'pl-8' : ''}"
+         class="sidebar-nav-item text-xs py-1 ${isActive ? 'active' : ''}"
          data-view="demo-preview" data-id="${demo.id}">
-        <svg class="w-3.5 h-3.5 shrink-0"><use href="icons/sprite.svg#icon-file-code"></use></svg>
+        ${icon('file-code', 'w-3.5 h-3.5 shrink-0 text-[var(--color-text-tertiary)]')}
         <span class="flex-1 truncate">${escapeHtml(demo.title)}</span>
       </a>
     `;
   }
 
-  _renderCachedDemos(projectId) {
-    const demos = this.projectDemosCache[projectId];
-    if (!demos) return ''; // not yet loaded — show nothing
-    if (demos.length === 0)
-      return `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">${t('sidebar.no_demos')}</p>`;
-    return demos.map((d) => this.renderDemoItem(d, true)).join('');
-  }
-
-  async bindContentEvents() {
-    // Expand/collapse project
-    this.container.querySelectorAll('[data-expand]').forEach((btn) => {
-      btn.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const projectId = btn.dataset.expand;
-        if (this.expandedProjects.has(projectId)) {
-          this.expandedProjects.delete(projectId);
-          delete this.projectDemosCache[projectId];
-          this.renderContent();
-        } else {
-          this.expandedProjects.add(projectId);
-          // Load demos then cache and re-render (no loading flash)
-          const demos = await getDemosByProject(projectId);
-          this.projectDemosCache[projectId] = demos;
-          this.renderContent();
-        }
-      });
-    });
-
-    // New project button
+  _bindContentEvents() {
     this.container.querySelector('#new-project-btn')?.addEventListener('click', (e) => {
       e.preventDefault();
       this._openNewProjectModal();
@@ -211,7 +204,8 @@ export class Sidebar {
       <div class="flex flex-col gap-3">
         <div>
           <label class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1">${t('project.new.title_label')}</label>
-          <input id="new-project-title" type="text" class="input w-full" placeholder="${t('project.new.title_label')}" maxlength="100" autofocus />
+          <input id="new-project-title" type="text" class="input w-full"
+                 placeholder="${t('project.new.title_placeholder')}" maxlength="100" />
         </div>
       </div>
     `;
@@ -220,11 +214,7 @@ export class Sidebar {
       title: t('project.new'),
       content: formEl,
       actions: [
-        {
-          label: t('modal.cancel'),
-          variant: 'secondary',
-          onClick: (m) => m.close(),
-        },
+        { label: t('modal.cancel'), variant: 'secondary', onClick: (m) => m.close() },
         {
           label: t('project.new.create'),
           variant: 'primary',
@@ -251,15 +241,7 @@ export class Sidebar {
     });
 
     modal.open();
-
-    // Focus input after modal opens
-    requestAnimationFrame(() => {
-      formEl.querySelector('#new-project-title')?.focus();
-    });
-  }
-
-  bindNavEvents() {
-    // (Navigation links use href, no extra events needed)
+    requestAnimationFrame(() => formEl.querySelector('#new-project-title')?.focus());
   }
 
   updateActiveState() {

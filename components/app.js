@@ -58,9 +58,6 @@ class App {
       await this.renderView(appState.get('currentView'));
     });
 
-    // Load SVG sprite
-    await this.loadSprite();
-
     // Listen to view changes
     appState.addEventListener('change', async (e) => {
       if (e.detail.key === 'currentView') {
@@ -97,19 +94,6 @@ class App {
     // Restore sidebar state
     const sidebarOpen = appState.get('sidebarOpen');
     this.updateSidebarState(sidebarOpen);
-  }
-
-  async loadSprite() {
-    try {
-      const res = await fetch('icons/sprite.svg');
-      const text = await res.text();
-      const div = document.createElement('div');
-      div.style.display = 'none';
-      div.innerHTML = text;
-      document.body.insertBefore(div, document.body.firstChild);
-    } catch (e) {
-      console.warn('Failed to load icon sprite:', e);
-    }
   }
 
   async renderView(view) {

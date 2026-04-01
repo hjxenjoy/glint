@@ -1,4 +1,5 @@
 import { t } from 'utils/i18n.js';
+import { icon } from 'utils/icons.js';
 
 const PRESETS = {
   mobile: { width: 375, height: 667, label: '375 × 667' },
@@ -34,16 +35,16 @@ export class PreviewPanel {
           <!-- Viewport preset buttons -->
           <div class="flex items-center gap-1">
             <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8" data-preset="mobile" title="${t('preview.mobile')} 375×667">
-              <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-mobile"></use></svg>
+              ${icon('device-mobile', 'w-4 h-4')}
             </button>
             <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8" data-preset="tablet" title="${t('preview.tablet')} 768×1024">
-              <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-tablet"></use></svg>
+              ${icon('device-tablet', 'w-4 h-4')}
             </button>
             <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8 active" data-preset="laptop" title="${t('preview.laptop')} 1280×800">
-              <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-laptop"></use></svg>
+              ${icon('laptop', 'w-4 h-4')}
             </button>
             <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8" data-preset="desktop" title="${t('preview.desktop')} 1920×1080">
-              <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-monitor"></use></svg>
+              ${icon('monitor', 'w-4 h-4')}
             </button>
           </div>
 
@@ -55,12 +56,12 @@ export class PreviewPanel {
 
           <!-- Refresh button -->
           <button class="btn btn-icon btn-ghost w-8 h-8" id="refresh-btn" title="${t('preview.refresh')}">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-refresh"></use></svg>
+            ${icon('arrow-counter-clockwise', 'w-4 h-4')}
           </button>
 
           <!-- Fullscreen button -->
           <button class="btn btn-icon btn-ghost w-8 h-8" id="fullscreen-btn" title="${t('preview.fullscreen')}">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-maximize"></use></svg>
+            ${icon('arrows-out', 'w-4 h-4')}
           </button>
         </div>
 

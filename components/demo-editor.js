@@ -9,6 +9,7 @@ import { toast } from 'components/toast.js';
 import { confirm } from 'components/modal.js';
 import { TagInput } from 'components/tag-input.js';
 import { t } from 'utils/i18n.js';
+import { icon } from 'utils/icons.js';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -117,7 +118,7 @@ export class DemoEditor {
              class="btn btn-icon btn-ghost"
              title="${escapeHtml(t('editor.back'))}"
              aria-label="${escapeHtml(t('editor.back'))}">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-arrow-left"></use></svg>
+            ${icon('arrow-left', 'w-4 h-4')}
           </a>
           <h1 class="flex-1 text-sm font-semibold text-[var(--color-text-primary)] truncate" id="editor-title-display">
             ${escapeHtml(this.demo.title)}
@@ -180,9 +181,7 @@ export class DemoEditor {
           <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">${t('editor.upload')}</h2>
           <div id="drop-zone"
                class="border-2 border-dashed border-[var(--color-border)] rounded-xl p-8 text-center cursor-pointer hover:border-[var(--color-accent)] hover:bg-[var(--color-bg-hover)] transition-colors">
-            <svg class="w-8 h-8 mx-auto mb-2 text-[var(--color-text-tertiary)]">
-              <use href="icons/sprite.svg#icon-upload"></use>
-            </svg>
+            <span class="w-8 h-8 mx-auto mb-2 text-[var(--color-text-tertiary)] flex justify-center">${icon('upload-simple', 'w-8 h-8')}</span>
             <p class="text-sm text-[var(--color-text-secondary)] mb-3">${t('editor.drop_zone')}</p>
             <div class="flex justify-center gap-2">
               <label class="btn btn-secondary btn-sm cursor-pointer">
@@ -245,9 +244,7 @@ export class DemoEditor {
     return `
       <div class="file-row" data-filename="${escapeHtml(file.name)}">
         <div class="flex items-center gap-3 px-4 py-3 bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-hover)] transition-colors">
-          <svg class="w-4 h-4 shrink-0 text-[var(--color-text-tertiary)]">
-            <use href="icons/sprite.svg#${fileIconId(file.name)}"></use>
-          </svg>
+          <span class="shrink-0 text-[var(--color-text-tertiary)]">${['js', 'html', 'htm', 'css'].includes(fileExt(file.name)) ? icon('file-code', 'w-4 h-4') : icon('file', 'w-4 h-4')}</span>
           <span class="flex-1 text-sm text-[var(--color-text-primary)] truncate font-mono">${escapeHtml(file.name)}</span>
           <span class="text-xs text-[var(--color-text-tertiary)] shrink-0">${escapeHtml(formatBytes(sizeBytes))}</span>
           ${isEntry ? `<span class="shrink-0 text-xs px-1.5 py-0.5 rounded bg-[var(--color-accent)] text-white font-medium">⭐ ${t('editor.entry_file')}</span>` : ''}
@@ -256,7 +253,7 @@ export class DemoEditor {
               isText
                 ? `
             <button class="btn btn-icon btn-ghost w-7 h-7 edit-file-btn" data-filename="${escapeHtml(file.name)}" title="${escapeHtml(t('editor.file.edit'))}">
-              <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-edit"></use></svg>
+              ${icon('pencil-simple', 'w-3.5 h-3.5')}
             </button>`
                 : ''
             }
@@ -269,7 +266,7 @@ export class DemoEditor {
                 : ''
             }
             <button class="btn btn-icon btn-ghost w-7 h-7 text-red-500 hover:text-red-600 delete-file-btn" data-filename="${escapeHtml(file.name)}" title="${escapeHtml(t('editor.file.delete'))}">
-              <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-trash"></use></svg>
+              ${icon('trash', 'w-3.5 h-3.5')}
             </button>
           </div>
         </div>
@@ -309,7 +306,7 @@ export class DemoEditor {
         `
             : `
         <div class="aspect-video bg-[var(--color-bg-tertiary)] flex items-center justify-center">
-          <svg class="w-8 h-8 text-[var(--color-text-tertiary)]"><use href="icons/sprite.svg#icon-file"></use></svg>
+          <span class="text-[var(--color-text-tertiary)]">${icon('file', 'w-8 h-8')}</span>
         </div>
         `
         }
@@ -319,7 +316,7 @@ export class DemoEditor {
             <p class="text-xs text-[var(--color-text-tertiary)]">${escapeHtml(formatBytes(sizeBytes))}</p>
           </div>
           <button class="btn btn-icon btn-ghost w-6 h-6 text-red-500 hover:text-red-600 delete-asset-btn shrink-0" data-asset-id="${escapeHtml(asset.id)}" title="${escapeHtml(t('editor.file.delete'))}">
-            <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-trash"></use></svg>
+            ${icon('trash', 'w-3.5 h-3.5')}
           </button>
         </div>
       </div>
@@ -751,7 +748,7 @@ export class NewDemoView {
         <!-- Header -->
         <div class="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] shrink-0">
           <a href="#/" class="btn btn-icon btn-ghost" aria-label="${escapeHtml(t('editor.back'))}">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-arrow-left"></use></svg>
+            ${icon('arrow-left', 'w-4 h-4')}
           </a>
           <h1 class="text-sm font-semibold text-[var(--color-text-primary)]">${t('new_demo.title')}</h1>
         </div>
@@ -766,7 +763,7 @@ export class NewDemoView {
                     data-method="paste">
               <div class="flex items-start gap-3">
                 <div class="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                  <svg class="w-5 h-5 text-blue-500"><use href="icons/sprite.svg#icon-code"></use></svg>
+                  <span class="text-blue-500">${icon('code', 'w-5 h-5')}</span>
                 </div>
                 <div>
                   <h3 class="text-sm font-semibold text-[var(--color-text-primary)] mb-1">${t('new_demo.method.paste')}</h3>
@@ -779,7 +776,7 @@ export class NewDemoView {
             <label class="method-card text-left p-5 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-bg-secondary)] hover:border-[var(--color-accent)] hover:bg-[var(--color-bg-hover)] transition-colors cursor-pointer group">
               <div class="flex items-start gap-3">
                 <div class="w-9 h-9 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
-                  <svg class="w-5 h-5 text-green-500"><use href="icons/sprite.svg#icon-upload"></use></svg>
+                  <span class="text-green-500">${icon('upload-simple', 'w-5 h-5')}</span>
                 </div>
                 <div>
                   <h3 class="text-sm font-semibold text-[var(--color-text-primary)] mb-1">${t('new_demo.method.upload')}</h3>
@@ -794,7 +791,7 @@ export class NewDemoView {
             <label class="method-card text-left p-5 rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-bg-secondary)] hover:border-[var(--color-accent)] hover:bg-[var(--color-bg-hover)] transition-colors cursor-pointer group">
               <div class="flex items-start gap-3">
                 <div class="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-                  <svg class="w-5 h-5 text-amber-500"><use href="icons/sprite.svg#icon-folder-plus"></use></svg>
+                  <span class="text-amber-500">${icon('folder-plus', 'w-5 h-5')}</span>
                 </div>
                 <div>
                   <h3 class="text-sm font-semibold text-[var(--color-text-primary)] mb-1">${t('new_demo.method.folder')}</h3>
@@ -809,7 +806,7 @@ export class NewDemoView {
                     data-method="blank">
               <div class="flex items-start gap-3">
                 <div class="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
-                  <svg class="w-5 h-5 text-purple-500"><use href="icons/sprite.svg#icon-file"></use></svg>
+                  <span class="text-purple-500">${icon('file', 'w-5 h-5')}</span>
                 </div>
                 <div>
                   <h3 class="text-sm font-semibold text-[var(--color-text-primary)] mb-1">${t('new_demo.method.blank')}</h3>
@@ -896,7 +893,7 @@ export class NewDemoView {
         <!-- Header -->
         <div class="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] shrink-0">
           <button class="btn btn-icon btn-ghost" id="back-to-step1" aria-label="${escapeHtml(t('new_demo.back'))}">
-            <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-arrow-left"></use></svg>
+            ${icon('arrow-left', 'w-4 h-4')}
           </button>
           <h1 class="text-sm font-semibold text-[var(--color-text-primary)]">${t('new_demo.title')} — ${t('new_demo.step2')}</h1>
         </div>
@@ -929,7 +926,7 @@ export class NewDemoView {
                   .map(
                     (f) => `
                   <li class="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
-                    <svg class="w-3.5 h-3.5 shrink-0 text-[var(--color-text-tertiary)]"><use href="icons/sprite.svg#${fileIconId(f.name)}"></use></svg>
+                    <span class="shrink-0 text-[var(--color-text-tertiary)]">${['js', 'html', 'htm', 'css'].includes(fileExt(f.name)) ? icon('file-code', 'w-3.5 h-3.5') : icon('file', 'w-3.5 h-3.5')}</span>
                     <span class="font-mono truncate">${escapeHtml(f.name)}</span>
                     ${f.name === this.entryFile ? `<span class="ml-auto text-xs px-1 py-0.5 rounded bg-[var(--color-accent)]/10 text-[var(--color-accent)]">入口</span>` : ''}
                   </li>
@@ -940,7 +937,7 @@ export class NewDemoView {
                   .map(
                     (a) => `
                   <li class="flex items-center gap-2 text-xs text-[var(--color-text-secondary)]">
-                    <svg class="w-3.5 h-3.5 shrink-0 text-[var(--color-text-tertiary)]"><use href="icons/sprite.svg#icon-file"></use></svg>
+                    <span class="shrink-0 text-[var(--color-text-tertiary)]">${icon('file', 'w-3.5 h-3.5')}</span>
                     <span class="font-mono truncate">${escapeHtml(a.filename)}</span>
                     <span class="ml-auto text-xs text-[var(--color-text-tertiary)]">${escapeHtml(formatBytes(a.size || base64Size(a.data || '')))}</span>
                   </li>

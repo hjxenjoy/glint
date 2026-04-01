@@ -1,5 +1,6 @@
 // Generic modal using native <dialog>
 import { t } from 'utils/i18n.js';
+import { icon } from 'utils/icons.js';
 
 export class Modal {
   constructor({ title, content, actions = [], onClose = null, size = 'md' }) {
@@ -14,7 +15,7 @@ export class Modal {
       <div class="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
         <h2 class="text-base font-semibold text-[var(--color-text-primary)]">${escapeHtml(title)}</h2>
         <button class="btn btn-icon btn-ghost" data-close aria-label="${t('modal.close')}">
-          <svg class="w-5 h-5"><use href="icons/sprite.svg#icon-close"></use></svg>
+          ${icon('x', 'w-5 h-5')}
         </button>
       </div>
       <div class="modal-content px-6 py-4">${typeof content === 'string' ? content : ''}</div>

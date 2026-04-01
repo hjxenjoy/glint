@@ -217,6 +217,17 @@ const translations = {
     'settings.language.zh': '中文',
     'settings.language.en': 'English',
 
+    // Project extras
+    'project.uncategorized': '未分组',
+    'project.description': '项目描述',
+    'project.description.placeholder': '添加项目描述...',
+    'demo.view.preview': '预览',
+    'demo.view.code': '代码',
+    'demo.view.save': '保存',
+    'demo.view.unsaved': '有未保存的更改',
+    'demo.move_to': '移动到项目',
+    'demo.rename': '重命名',
+
     // New Project Modal
     'project.new': '新建项目',
     'project.new.title_label': '项目名称',
@@ -475,6 +486,17 @@ const translations = {
     'settings.language.title': 'Language',
     'settings.language.zh': '中文',
     'settings.language.en': 'English',
+
+    // Project extras
+    'project.uncategorized': 'Uncategorized',
+    'project.description': 'Description',
+    'project.description.placeholder': 'Add a project description...',
+    'demo.view.preview': 'Preview',
+    'demo.view.code': 'Code',
+    'demo.view.save': 'Save',
+    'demo.view.unsaved': 'Unsaved changes',
+    'demo.move_to': 'Move to project',
+    'demo.rename': 'Rename',
 
     // New Project Modal
     'project.new': 'New Project',

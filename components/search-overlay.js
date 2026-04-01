@@ -3,6 +3,7 @@ import { search } from 'db/search.js';
 import { formatRelative } from 'utils/date.js';
 import { getAllDemos } from 'db/demos.js';
 import { t } from 'utils/i18n.js';
+import { icon } from 'utils/icons.js';
 
 export class SearchView {
   constructor(container) {
@@ -29,9 +30,7 @@ export class SearchView {
       <div class="max-w-3xl mx-auto px-6 py-8">
         <!-- Search input -->
         <div class="relative mb-6">
-          <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-text-tertiary)] pointer-events-none">
-            <use href="icons/sprite.svg#icon-search"></use>
-          </svg>
+          <span class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--color-text-tertiary)] pointer-events-none flex items-center">${icon('magnifying-glass', 'w-5 h-5')}</span>
           <input
             type="text"
             id="main-search-input"
@@ -46,9 +45,7 @@ export class SearchView {
         <!-- Results container -->
         <div id="search-results">
           <div class="text-center py-12 text-[var(--color-text-tertiary)]">
-            <svg class="w-12 h-12 mx-auto mb-3 opacity-40">
-              <use href="icons/sprite.svg#icon-search"></use>
-            </svg>
+            <span class="w-12 h-12 mx-auto mb-3 opacity-40 flex justify-center">${icon('magnifying-glass', 'w-12 h-12')}</span>
             <p>输入关键词开始搜索</p>
           </div>
         </div>
@@ -113,9 +110,7 @@ export class SearchView {
       if (recent.length === 0) {
         resultsEl.innerHTML = `
           <div class="text-center py-12 text-[var(--color-text-tertiary)]">
-            <svg class="w-12 h-12 mx-auto mb-3 opacity-40">
-              <use href="icons/sprite.svg#icon-file-code"></use>
-            </svg>
+            <span class="w-12 h-12 mx-auto mb-3 opacity-40 flex justify-center">${icon('file-code', 'w-12 h-12')}</span>
             <p>暂无 Demo，快去新建一个吧</p>
           </div>
         `;
@@ -145,9 +140,7 @@ export class SearchView {
     if (totalCount === 0) {
       resultsEl.innerHTML = `
         <div class="text-center py-12">
-          <svg class="w-12 h-12 mx-auto mb-3 text-[var(--color-text-tertiary)] opacity-40">
-            <use href="icons/sprite.svg#icon-search"></use>
-          </svg>
+          <span class="w-12 h-12 mx-auto mb-3 text-[var(--color-text-tertiary)] opacity-40 flex justify-center">${icon('magnifying-glass', 'w-12 h-12')}</span>
           <p class="text-[var(--color-text-secondary)] mb-1">${escapeHtml(t('search.empty'))}</p>
           <p class="text-sm text-[var(--color-text-tertiary)]">${escapeHtml(t('search.empty.hint'))} "<strong>${escapeHtml(query)}</strong>"</p>
         </div>
@@ -200,9 +193,7 @@ export class SearchView {
     return `
       <a href="#/demos/${escapeAttr(demo.id)}"
          class="flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors group">
-        <svg class="w-4 h-4 mt-0.5 shrink-0 text-[var(--color-text-tertiary)]">
-          <use href="icons/sprite.svg#icon-file-code"></use>
-        </svg>
+        <span class="mt-0.5 shrink-0 text-[var(--color-text-tertiary)]">${icon('file-code', 'w-4 h-4')}</span>
         <div class="flex-1 min-w-0">
           <div class="font-medium text-sm text-[var(--color-text-primary)] truncate">${title}</div>
           ${snippet ? `<div class="text-xs text-[var(--color-text-secondary)] mt-0.5 line-clamp-1">${snippet}</div>` : ''}
@@ -232,9 +223,7 @@ export class SearchView {
     return `
       <a href="#/projects/${escapeAttr(project.id)}"
          class="flex items-start gap-3 px-3 py-2.5 rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors group">
-        <svg class="w-4 h-4 mt-0.5 shrink-0 text-[var(--color-accent)]" ${accentStyle}>
-          <use href="icons/sprite.svg#icon-folder"></use>
-        </svg>
+        <span class="mt-0.5 shrink-0 text-[var(--color-accent)]" ${accentStyle}>${icon('folder', 'w-4 h-4')}</span>
         <div class="flex-1 min-w-0">
           <div class="font-medium text-sm text-[var(--color-text-primary)] truncate">${title}</div>
           ${snippet ? `<div class="text-xs text-[var(--color-text-secondary)] mt-0.5 line-clamp-1">${snippet}</div>` : ''}

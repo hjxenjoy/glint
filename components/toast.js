@@ -1,5 +1,6 @@
 // Toast notification system
 import { t } from 'utils/i18n.js';
+import { icon } from 'utils/icons.js';
 
 let toastContainer = null;
 
@@ -14,10 +15,10 @@ function getContainer() {
 }
 
 const TYPE_CONFIG = {
-  success: { icon: 'icon-check', bg: 'bg-green-500', text: 'text-white' },
-  error: { icon: 'icon-error', bg: 'bg-red-500', text: 'text-white' },
-  warning: { icon: 'icon-warning', bg: 'bg-amber-500', text: 'text-white' },
-  info: { icon: 'icon-info', bg: 'bg-indigo-500', text: 'text-white' },
+  success: { iconName: 'check-circle', bg: 'bg-green-500', text: 'text-white' },
+  error: { iconName: 'warning', bg: 'bg-red-500', text: 'text-white' },
+  warning: { iconName: 'warning', bg: 'bg-amber-500', text: 'text-white' },
+  info: { iconName: 'info', bg: 'bg-indigo-500', text: 'text-white' },
 };
 
 export function showToast({ message, type = 'info', duration = 3000 }) {
@@ -28,10 +29,10 @@ export function showToast({ message, type = 'info', duration = 3000 }) {
   toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${config.bg} ${config.text} min-w-64 max-w-sm translate-x-full opacity-0 transition-all duration-300`;
 
   toast.innerHTML = `
-    <svg class="w-5 h-5 shrink-0" aria-hidden="true"><use href="icons/sprite.svg#${config.icon}"></use></svg>
+    ${icon(config.iconName, 'w-5 h-5 shrink-0')}
     <span class="text-sm font-medium flex-1">${escapeHtml(message)}</span>
     <button class="shrink-0 opacity-70 hover:opacity-100" aria-label="${t('modal.close')}">
-      <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-close"></use></svg>
+      ${icon('x', 'w-4 h-4')}
     </button>
   `;
 
