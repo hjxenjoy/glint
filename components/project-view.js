@@ -113,19 +113,15 @@ export class ProjectView {
           </div>
 
           <!-- Notes / description -->
-          <div class="mb-4 group">
-            <p class="project-notes text-sm text-[var(--color-text-secondary)] leading-relaxed cursor-pointer hover:text-[var(--color-text-primary)] transition-colors whitespace-pre-wrap ${p.notes ? '' : 'italic text-[var(--color-text-tertiary)]'}"
-               id="project-notes-display"
-               title="点击编辑备注">
-              ${p.notes ? escapeHtml(p.notes) : t('project.notes.placeholder')}
-            </p>
+          <div class="mb-4">
             <textarea
-              class="project-notes-input hidden w-full text-sm bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg outline-none focus:border-[var(--color-accent)] text-[var(--color-text-primary)] p-2.5 resize-none leading-relaxed"
+              class="project-notes-input w-full text-sm bg-transparent border border-transparent rounded-lg outline-none text-[var(--color-text-secondary)] px-0 py-0 resize-none leading-relaxed cursor-pointer hover:text-[var(--color-text-primary)] transition-colors placeholder:italic placeholder:text-[var(--color-text-tertiary)]"
               id="project-notes-input"
               rows="3"
               placeholder="${t('project.notes.placeholder')}"
-              aria-label="项目备注"
-            >${escapeHtml(p.notes || '')}</textarea>
+              aria-label="${t('project.notes.placeholder')}"
+              readonly
+            >${escapeHtml((p.notes || '').trim())}</textarea>
           </div>
 
           <!-- Tags row -->
@@ -353,52 +349,65 @@ export class ProjectView {
       }
     });
 
-    // Inline notes editing
-    const notesDisplay = this.container.querySelector('#project-notes-display');
+    // Notes editing — single textarea, readonly by default
     const notesInput = this.container.querySelector('#project-notes-input');
 
     const startNotesEdit = () => {
-      notesDisplay.classList.add('hidden');
-      notesInput.classList.remove('hidden');
+      notesInput.removeAttribute('readonly');
+      notesInput.classList.remove(
+        'bg-transparent',
+        'border-transparent',
+        'px-0',
+        'py-0',
+        'cursor-pointer'
+      );
+      notesInput.classList.add(
+        'bg-[var(--color-bg-tertiary)]',
+        'border-[var(--color-border)]',
+        'focus:border-[var(--color-accent)]',
+        'px-2.5',
+        'py-2.5',
+        'cursor-text'
+      );
       notesInput.focus();
     };
 
-    const saveNotesEdit = async () => {
+    const endNotesEdit = async () => {
       const newNotes = notesInput.value.trim();
-      if (newNotes === (this.project.notes || '')) {
-        cancelNotesEdit();
-        return;
-      }
+      notesInput.setAttribute('readonly', '');
+      notesInput.classList.add(
+        'bg-transparent',
+        'border-transparent',
+        'px-0',
+        'py-0',
+        'cursor-pointer'
+      );
+      notesInput.classList.remove(
+        'bg-[var(--color-bg-tertiary)]',
+        'border-[var(--color-border)]',
+        'focus:border-[var(--color-accent)]',
+        'px-2.5',
+        'py-2.5',
+        'cursor-text'
+      );
+      notesInput.value = newNotes;
+      if (newNotes === (this.project.notes || '').trim()) return;
       try {
         this.project = await updateProject(this.project.id, { notes: newNotes });
-        notesDisplay.textContent = newNotes || t('project.notes.placeholder');
-        if (newNotes) {
-          notesDisplay.classList.remove('italic', 'text-[var(--color-text-tertiary)]');
-        } else {
-          notesDisplay.classList.add('italic', 'text-[var(--color-text-tertiary)]');
-        }
-        notesInput.classList.add('hidden');
-        notesDisplay.classList.remove('hidden');
         appState.notifyDataChanged('project');
       } catch (err) {
         console.error('Update notes error:', err);
         toast.error('更新失败');
-        cancelNotesEdit();
+        notesInput.value = (this.project.notes || '').trim();
       }
     };
 
-    const cancelNotesEdit = () => {
-      notesInput.value = this.project.notes || '';
-      notesInput.classList.add('hidden');
-      notesDisplay.classList.remove('hidden');
-    };
-
-    notesDisplay.addEventListener('click', startNotesEdit);
-    notesInput.addEventListener('blur', saveNotesEdit);
+    notesInput.addEventListener('focus', startNotesEdit);
+    notesInput.addEventListener('blur', endNotesEdit);
     notesInput.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         e.preventDefault();
-        saveNotesEdit();
+        notesInput.blur();
       }
     });
 

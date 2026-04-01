@@ -41,9 +41,10 @@ class App {
     const theme = await getSetting('theme', 'system').catch(() => 'system');
     appState.set('theme', theme);
 
-    // Request persistent storage
+    // Request persistent storage — warn once if denied
     const persisted = await requestPersistence();
-    if (!persisted) {
+    if (!persisted && !localStorage.getItem('glint-persist-warned')) {
+      localStorage.setItem('glint-persist-warned', '1');
       setTimeout(() => {
         toast.warning(t('toast.persist_warning'));
       }, 2000);

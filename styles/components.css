@@ -463,6 +463,17 @@
     font-weight: 500;
   }
 
+  /* ── Modal Dialog ─────────────────────────────────────────── */
+  /* Tailwind preflight resets dialog margins, breaking browser's UA centering.
+     Restore centering explicitly for dialogs with this class. */
+  .modal-dialog {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+
   /* ── Storage Bar ───────────────────────────────────────────── */
   .storage-bar {
     height: 4px;

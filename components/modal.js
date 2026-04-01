@@ -54,7 +54,10 @@ export class Modal {
 
   close() {
     this.dialog.classList.remove('modal-open');
-    this.dialog.addEventListener('transitionend', () => this.dialog.close(), { once: true });
+    // Use a short timeout to allow any CSS exit transition, then close
+    setTimeout(() => {
+      if (this.dialog.open) this.dialog.close();
+    }, 150);
   }
 
   destroy() {
