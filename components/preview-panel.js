@@ -34,7 +34,7 @@ export class PreviewPanel {
           <!-- Viewport preset buttons -->
           <div class="flex items-center gap-1">
             <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8" data-preset="mobile" title="${t('preview.mobile')} 375×667">
-              <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-smartphone"></use></svg>
+              <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-mobile"></use></svg>
             </button>
             <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8" data-preset="tablet" title="${t('preview.tablet')} 768×1024">
               <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-tablet"></use></svg>

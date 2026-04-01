@@ -107,9 +107,9 @@ export class Sidebar {
       <div class="p-2">
         <div class="flex items-center justify-between px-2 py-1 mb-1">
           <span class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">${t('sidebar.projects')}</span>
-          <a href="#/demos/new" class="btn btn-icon btn-ghost w-5 h-5" title="${t('sidebar.new_project')}" id="new-project-btn">
+          <button type="button" class="btn btn-icon btn-ghost" title="${t('sidebar.new_project')}" id="new-project-btn">
             <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-folder-plus"></use></svg>
-          </a>
+          </button>
         </div>
         ${this.projects.length === 0 ? `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">${t('sidebar.no_projects')}</p>` : ''}
         ${this.projects.map((p) => this.renderProjectItem(p)).join('')}
