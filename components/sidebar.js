@@ -2,6 +2,7 @@ import { appState } from 'store/app-state.js';
 import { getAllProjects } from 'db/projects.js';
 import { getDemosByProject, getStandaloneDemos } from 'db/demos.js';
 import { getStorageEstimate, formatBytes } from 'utils/storage-estimate.js';
+import { t } from 'utils/i18n.js';
 
 export class Sidebar {
   constructor(container) {
@@ -9,6 +10,11 @@ export class Sidebar {
     this.projects = [];
     this.standaloneDemos = [];
     this.expandedProjects = new Set();
+    this._localeHandler = () => {
+      this.render();
+      this.loadData();
+    };
+    window.addEventListener('locale-change', this._localeHandler);
     this.render();
     this.loadData();
 
@@ -50,7 +56,7 @@ export class Sidebar {
         <div class="p-3 border-b border-[var(--color-border)]">
           <a href="#/demos/new" class="btn btn-primary w-full justify-center gap-2">
             <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-plus"></use></svg>
-            新建 Demo
+            ${t('sidebar.new_demo')}
           </a>
         </div>
 
@@ -58,11 +64,11 @@ export class Sidebar {
         <nav class="p-2 border-b border-[var(--color-border)]">
           <a href="#/" class="sidebar-nav-item" data-view="home">
             <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-home"></use></svg>
-            <span>首页</span>
+            <span>${t('sidebar.home')}</span>
           </a>
           <a href="#/demos" class="sidebar-nav-item" data-view="all-demos">
             <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-grid"></use></svg>
-            <span>全部 Demo</span>
+            <span>${t('sidebar.all_demos')}</span>
           </a>
         </nav>
 
@@ -74,7 +80,7 @@ export class Sidebar {
         <!-- Storage indicator -->
         <div class="p-3 border-t border-[var(--color-border)]">
           <div class="flex items-center justify-between mb-1">
-            <span class="text-xs text-[var(--color-text-tertiary)]">存储用量</span>
+            <span class="text-xs text-[var(--color-text-tertiary)]">${t('sidebar.storage')}</span>
             <span class="text-xs text-[var(--color-text-tertiary)]" id="storage-label">-</span>
           </div>
           <div class="h-1.5 rounded-full bg-[var(--color-bg-tertiary)] overflow-hidden">
@@ -98,12 +104,12 @@ export class Sidebar {
     html += `
       <div class="p-2">
         <div class="flex items-center justify-between px-2 py-1 mb-1">
-          <span class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">项目</span>
-          <a href="#/demos/new" class="btn btn-icon btn-ghost w-5 h-5" title="新建项目" id="new-project-btn">
+          <span class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">${t('sidebar.projects')}</span>
+          <a href="#/demos/new" class="btn btn-icon btn-ghost w-5 h-5" title="${t('sidebar.new_project')}" id="new-project-btn">
             <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-folder-plus"></use></svg>
           </a>
         </div>
-        ${this.projects.length === 0 ? `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">暂无项目</p>` : ''}
+        ${this.projects.length === 0 ? `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">${t('sidebar.no_projects')}</p>` : ''}
         ${this.projects.map((p) => this.renderProjectItem(p)).join('')}
       </div>
     `;
@@ -113,7 +119,7 @@ export class Sidebar {
       html += `
         <div class="p-2 border-t border-[var(--color-border)]">
           <div class="px-2 py-1 mb-1">
-            <span class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">独立 Demo</span>
+            <span class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">${t('sidebar.standalone_demos')}</span>
           </div>
           ${this.standaloneDemos.map((d) => this.renderDemoItem(d)).join('')}
         </div>
@@ -139,7 +145,7 @@ export class Sidebar {
         ${
           isExpanded
             ? `<div class="pl-6" data-demo-list="${project.id}">
-          <div class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">加载中...</div>
+          <div class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">${t('sidebar.loading')}</div>
         </div>`
             : ''
         }
@@ -177,7 +183,7 @@ export class Sidebar {
           if (listEl) {
             listEl.innerHTML = demos.length
               ? demos.map((d) => this.renderDemoItem(d, true)).join('')
-              : `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">暂无 Demo</p>`;
+              : `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-1">${t('sidebar.no_demos')}</p>`;
           }
         }
         this.renderContent();
@@ -212,6 +218,10 @@ export class Sidebar {
 
       el.classList.toggle('active', isActive);
     });
+  }
+
+  destroy() {
+    window.removeEventListener('locale-change', this._localeHandler);
   }
 }
 

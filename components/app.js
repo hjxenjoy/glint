@@ -4,6 +4,7 @@ import { Sidebar } from 'components/sidebar.js';
 import { getSetting } from 'db/settings.js';
 import { requestPersistence } from 'utils/storage-estimate.js';
 import { toast } from 'components/toast.js';
+import { t } from 'utils/i18n.js';
 
 // Lazy-load views to keep initial bundle small
 async function loadView(view) {
@@ -44,12 +45,17 @@ class App {
     const persisted = await requestPersistence();
     if (!persisted) {
       setTimeout(() => {
-        toast.warning('存储未持久化，浏览器可能在空间不足时清除数据，建议定期导出备份');
+        toast.warning(t('toast.persist_warning'));
       }, 2000);
     }
 
     // Build layout
     this.buildLayout();
+
+    // Re-render current view on locale change
+    window.addEventListener('locale-change', async () => {
+      await this.renderView(appState.get('currentView'));
+    });
 
     // Load SVG sprite
     await this.loadSprite();
@@ -122,7 +128,7 @@ class App {
       this.currentViewInstance = new ViewClass(main);
     } catch (e) {
       console.error('Failed to load view:', view, e);
-      main.innerHTML = `<div class="flex items-center justify-center h-full text-[var(--color-text-secondary)]">视图加载失败</div>`;
+      main.innerHTML = `<div class="flex items-center justify-center h-full text-[var(--color-text-secondary)]">${t('common.error')}</div>`;
     }
   }
 

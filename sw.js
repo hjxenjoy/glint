@@ -20,6 +20,7 @@ const SHELL_FILES = [
   '/db/search.js',
   '/store/app-state.js',
   '/utils/id.js',
+  '/utils/i18n.js',
   '/utils/base64.js',
   '/utils/storage-estimate.js',
   '/utils/date.js',

@@ -5,6 +5,7 @@ import { deleteAssetsByDemo } from 'db/assets.js';
 import { formatRelative, formatFull } from 'utils/date.js';
 import { confirm } from 'components/modal.js';
 import { toast } from 'components/toast.js';
+import { t } from 'utils/i18n.js';
 
 const PRESET_COLORS = [
   '#6366f1', // indigo
@@ -30,7 +31,13 @@ export class ProjectView {
     this.container = container;
     this.project = null;
     this.demos = [];
+    this._localeHandler = () => this.init();
+    window.addEventListener('locale-change', this._localeHandler);
     this.init();
+  }
+
+  destroy() {
+    window.removeEventListener('locale-change', this._localeHandler);
   }
 
   async init() {
@@ -39,6 +46,8 @@ export class ProjectView {
       this.renderError('未选择项目');
       return;
     }
+
+    this.renderLoading();
 
     try {
       [this.project, this.demos] = await Promise.all([
@@ -56,6 +65,14 @@ export class ProjectView {
       console.error('ProjectView init error:', err);
       this.renderError('加载项目失败');
     }
+  }
+
+  renderLoading() {
+    this.container.innerHTML = `
+      <div class="flex flex-col items-center justify-center h-full gap-4 text-[var(--color-text-tertiary)]">
+        <p class="text-sm">${t('project.loading')}</p>
+      </div>
+    `;
   }
 
   render() {
@@ -77,7 +94,7 @@ export class ProjectView {
                     title="${escapeHtml(p.title)}">
                   ${escapeHtml(p.title)}
                 </h1>
-                <button class="btn btn-icon btn-ghost w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" id="edit-title-btn" title="编辑标题">
+                <button class="btn btn-icon btn-ghost w-7 h-7 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" id="edit-title-btn" title="${t('project.edit_title')}">
                   <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-edit"></use></svg>
                 </button>
               </div>
@@ -91,7 +108,7 @@ export class ProjectView {
             </div>
             <button class="btn btn-danger btn-sm gap-1.5 shrink-0" id="delete-project-btn">
               <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-trash"></use></svg>
-              删除项目
+              ${t('project.delete')}
             </button>
           </div>
 
@@ -100,13 +117,13 @@ export class ProjectView {
             <p class="project-notes text-sm text-[var(--color-text-secondary)] leading-relaxed cursor-pointer hover:text-[var(--color-text-primary)] transition-colors whitespace-pre-wrap ${p.notes ? '' : 'italic text-[var(--color-text-tertiary)]'}"
                id="project-notes-display"
                title="点击编辑备注">
-              ${p.notes ? escapeHtml(p.notes) : '点击添加项目备注…'}
+              ${p.notes ? escapeHtml(p.notes) : t('project.notes.placeholder')}
             </p>
             <textarea
               class="project-notes-input hidden w-full text-sm bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded-lg outline-none focus:border-[var(--color-accent)] text-[var(--color-text-primary)] p-2.5 resize-none leading-relaxed"
               id="project-notes-input"
               rows="3"
-              placeholder="添加项目备注…"
+              placeholder="${t('project.notes.placeholder')}"
               aria-label="项目备注"
             >${escapeHtml(p.notes || '')}</textarea>
           </div>
@@ -129,7 +146,7 @@ export class ProjectView {
                 .join('')}
               <button class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border border-dashed border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors" id="add-tag-btn">
                 <svg class="w-2.5 h-2.5"><use href="icons/sprite.svg#icon-plus"></use></svg>
-                添加标签
+                ${t('project.add_tag')}
               </button>
             </div>
             <div class="hidden mt-2" id="tag-input-row">
@@ -141,7 +158,7 @@ export class ProjectView {
 
           <!-- Color picker -->
           <div class="flex items-center gap-3 mb-4">
-            <span class="text-xs text-[var(--color-text-tertiary)] shrink-0">主题色</span>
+            <span class="text-xs text-[var(--color-text-tertiary)] shrink-0">${t('project.color')}</span>
             <div class="flex items-center gap-1.5" id="color-swatches">
               ${PRESET_COLORS.map(
                 (color) => `
@@ -169,9 +186,9 @@ export class ProjectView {
 
           <!-- Meta info -->
           <div class="flex items-center gap-4 text-xs text-[var(--color-text-tertiary)]">
-            <span title="${formatFull(p.createdAt)}">创建于 ${formatRelative(p.createdAt)}</span>
-            <span title="${formatFull(p.updatedAt)}">更新于 ${formatRelative(p.updatedAt)}</span>
-            <span>${this.demos.length} 个 Demo</span>
+            <span title="${formatFull(p.createdAt)}">${t('project.created')} ${formatRelative(p.createdAt)}</span>
+            <span title="${formatFull(p.updatedAt)}">${t('project.updated')} ${formatRelative(p.updatedAt)}</span>
+            <span>${t('project.demos_count', { n: this.demos.length })}</span>
           </div>
         </div>
 
@@ -182,7 +199,7 @@ export class ProjectView {
             <a href="#/demos/new?projectId=${escapeHtml(p.id)}"
                class="btn btn-primary btn-sm gap-1.5">
               <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-plus"></use></svg>
-              新建 Demo
+              ${t('project.new_demo')}
             </a>
           </div>
 
@@ -203,13 +220,13 @@ export class ProjectView {
         <div class="flex flex-col items-center justify-center py-16 text-center gap-4">
           <svg class="w-12 h-12 text-[var(--color-text-tertiary)] opacity-40"><use href="icons/sprite.svg#icon-file-code"></use></svg>
           <div>
-            <p class="text-sm text-[var(--color-text-secondary)] mb-1">此项目暂无 Demo</p>
-            <p class="text-xs text-[var(--color-text-tertiary)]">点击"新建 Demo"开始创建</p>
+            <p class="text-sm text-[var(--color-text-secondary)] mb-1">${t('project.no_demos')}</p>
+            <p class="text-xs text-[var(--color-text-tertiary)]">点击"${t('project.new_demo')}"开始创建</p>
           </div>
           <a href="#/demos/new?projectId=${escapeHtml(this.project.id)}"
              class="btn btn-primary btn-sm gap-1.5">
             <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-plus"></use></svg>
-            新建 Demo
+            ${t('project.new_demo')}
           </a>
         </div>
       `;
@@ -264,13 +281,13 @@ export class ProjectView {
           <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <a href="#/demos/${escapeHtml(demo.id)}/edit"
                class="btn btn-icon btn-ghost w-6 h-6"
-               title="编辑">
+               title="${t('demo.edit')}">
               <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-edit"></use></svg>
             </a>
             <button class="btn btn-icon btn-ghost w-6 h-6 hover:text-[var(--color-danger)] demo-delete-btn"
                     data-demo-id="${escapeHtml(demo.id)}"
                     data-demo-title="${escapeHtml(demo.title)}"
-                    title="删除">
+                    title="${t('demo.delete')}">
               <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-trash"></use></svg>
             </button>
           </div>
@@ -354,7 +371,7 @@ export class ProjectView {
       }
       try {
         this.project = await updateProject(this.project.id, { notes: newNotes });
-        notesDisplay.textContent = newNotes || '点击添加项目备注…';
+        notesDisplay.textContent = newNotes || t('project.notes.placeholder');
         if (newNotes) {
           notesDisplay.classList.remove('italic', 'text-[var(--color-text-tertiary)]');
         } else {
@@ -464,7 +481,7 @@ export class ProjectView {
     this.container.querySelectorAll('.tag-remove-btn').forEach((btn) => {
       btn.addEventListener('click', async () => {
         const tagToRemove = btn.dataset.tag;
-        const newTags = (this.project.tags || []).filter((t) => t !== tagToRemove);
+        const newTags = (this.project.tags || []).filter((tag) => tag !== tagToRemove);
         await this.saveTag(newTags);
       });
     });
@@ -500,7 +517,7 @@ export class ProjectView {
         .join('')}
       <button class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs border border-dashed border-[var(--color-border)] text-[var(--color-text-tertiary)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-colors" id="add-tag-btn">
         <svg class="w-2.5 h-2.5"><use href="icons/sprite.svg#icon-plus"></use></svg>
-        添加标签
+        ${t('project.add_tag')}
       </button>
     `;
     // Re-bind tag events after re-render
@@ -509,9 +526,9 @@ export class ProjectView {
 
   async handleDeleteProject() {
     const confirmed = await confirm({
-      title: '删除项目',
-      message: '删除项目将不会删除其中的 Demo，Demo 将变为独立状态。确定要删除此项目吗？',
-      confirmText: '删除项目',
+      title: t('project.delete.confirm.title'),
+      message: t('project.delete.confirm.message'),
+      confirmText: t('project.delete'),
       cancelText: '取消',
       danger: true,
     });
@@ -536,9 +553,9 @@ export class ProjectView {
 
   async handleDeleteDemo(demoId, demoTitle) {
     const confirmed = await confirm({
-      title: '删除 Demo',
-      message: `确定要删除"${demoTitle}"吗？此操作不可撤销。`,
-      confirmText: '删除',
+      title: t('demo.delete.confirm.title'),
+      message: t('demo.delete.confirm.message', { title: demoTitle }),
+      confirmText: t('demo.delete'),
       cancelText: '取消',
       danger: true,
     });

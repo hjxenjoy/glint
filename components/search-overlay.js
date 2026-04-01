@@ -2,6 +2,7 @@ import { appState } from 'store/app-state.js';
 import { search } from 'db/search.js';
 import { formatRelative } from 'utils/date.js';
 import { getAllDemos } from 'db/demos.js';
+import { t } from 'utils/i18n.js';
 
 export class SearchView {
   constructor(container) {
@@ -9,12 +10,18 @@ export class SearchView {
     this.query = appState.get('searchQuery') || '';
     this.results = { demos: [], projects: [] };
     this._debounceTimer = null;
+    this._localeHandler = () => this.render();
+    window.addEventListener('locale-change', this._localeHandler);
     this.render();
     if (this.query) {
       this.doSearch(this.query);
     } else {
       this.loadRecent();
     }
+  }
+
+  destroy() {
+    window.removeEventListener('locale-change', this._localeHandler);
   }
 
   render() {
@@ -29,11 +36,11 @@ export class SearchView {
             type="text"
             id="main-search-input"
             class="w-full pl-12 pr-12 py-3 text-lg rounded-xl border-2 border-[var(--color-border)] bg-[var(--color-bg-secondary)] focus:border-[var(--color-accent)] focus:outline-none transition-colors"
-            placeholder="搜索 Demo、项目、标签..."
+            placeholder="${escapeAttr(t('search.placeholder'))}"
             autofocus
             value="${escapeAttr(this.query)}"
           />
-          <kbd class="absolute right-4 top-1/2 -translate-y-1/2 text-xs bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded px-1.5 py-0.5 font-mono text-[var(--color-text-tertiary)]">Esc</kbd>
+          <kbd class="absolute right-4 top-1/2 -translate-y-1/2 text-xs bg-[var(--color-bg-tertiary)] border border-[var(--color-border)] rounded px-1.5 py-0.5 font-mono text-[var(--color-text-tertiary)]">${escapeHtml(t('search.shortcut_hint'))}</kbd>
         </div>
 
         <!-- Results container -->
@@ -82,7 +89,7 @@ export class SearchView {
     resultsEl.innerHTML = `
       <div class="text-center py-8 text-[var(--color-text-tertiary)]">
         <div class="inline-block w-5 h-5 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin mb-2"></div>
-        <p class="text-sm">搜索中...</p>
+        <p class="text-sm">${escapeHtml(t('common.loading'))}</p>
       </div>
     `;
 
@@ -117,7 +124,7 @@ export class SearchView {
 
       resultsEl.innerHTML = `
         <div>
-          <h2 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">最近访问</h2>
+          <h2 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">${escapeHtml(t('search.recent'))}</h2>
           <div class="space-y-1">
             ${recent.map((demo) => this.renderDemoItem(demo, '')).join('')}
           </div>
@@ -141,8 +148,8 @@ export class SearchView {
           <svg class="w-12 h-12 mx-auto mb-3 text-[var(--color-text-tertiary)] opacity-40">
             <use href="icons/sprite.svg#icon-search"></use>
           </svg>
-          <p class="text-[var(--color-text-secondary)] mb-1">没有找到匹配的内容</p>
-          <p class="text-sm text-[var(--color-text-tertiary)]">没有与 "<strong>${escapeHtml(query)}</strong>" 相关的结果</p>
+          <p class="text-[var(--color-text-secondary)] mb-1">${escapeHtml(t('search.empty'))}</p>
+          <p class="text-sm text-[var(--color-text-tertiary)]">${escapeHtml(t('search.empty.hint'))} "<strong>${escapeHtml(query)}</strong>"</p>
         </div>
       `;
       return;
@@ -153,7 +160,7 @@ export class SearchView {
     if (demos.length > 0) {
       html += `
         <div class="mb-6">
-          <h2 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">Demo (${demos.length})</h2>
+          <h2 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">${escapeHtml(t('search.demos_section'))} (${demos.length})</h2>
           <div class="space-y-1">
             ${demos.map((demo) => this.renderDemoItem(demo, query)).join('')}
           </div>
@@ -164,7 +171,7 @@ export class SearchView {
     if (projects.length > 0) {
       html += `
         <div class="mb-6">
-          <h2 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">项目 (${projects.length})</h2>
+          <h2 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">${escapeHtml(t('search.projects_section'))} (${projects.length})</h2>
           <div class="space-y-1">
             ${projects.map((project) => this.renderProjectItem(project, query)).join('')}
           </div>

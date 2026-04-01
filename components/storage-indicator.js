@@ -1,10 +1,20 @@
 import { getStorageEstimate, formatBytes } from 'utils/storage-estimate.js';
+import { t } from 'utils/i18n.js';
 
 export class StorageIndicator {
   constructor(container) {
     this.container = container;
+    this._localeHandler = () => {
+      this.render();
+      this.refresh();
+    };
+    window.addEventListener('locale-change', this._localeHandler);
     this.render();
     this.refresh();
+  }
+
+  destroy() {
+    window.removeEventListener('locale-change', this._localeHandler);
   }
 
   async refresh() {
@@ -34,7 +44,7 @@ export class StorageIndicator {
     this.container.innerHTML = `
       <div>
         <div class="flex justify-between text-xs text-[var(--color-text-tertiary)] mb-1">
-          <span>存储</span>
+          <span>${t('sidebar.storage')}</span>
           <span class="storage-label">-</span>
         </div>
         <div class="h-1.5 rounded-full bg-[var(--color-bg-tertiary)] overflow-hidden">

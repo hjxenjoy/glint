@@ -1,3 +1,5 @@
+import { t } from 'utils/i18n.js';
+
 const PRESETS = {
   mobile: { width: 375, height: 667, label: '375 × 667' },
   tablet: { width: 768, height: 1024, label: '768 × 1024' },
@@ -14,6 +16,8 @@ export class PreviewPanel {
     this.container = container;
     this.srcdoc = '';
     this.iframe = null;
+    this._localeHandler = () => this.buildDOM();
+    window.addEventListener('locale-change', this._localeHandler);
     this.buildDOM();
   }
 
@@ -29,16 +33,16 @@ export class PreviewPanel {
         <div class="preview-toolbar flex items-center gap-2 px-3 py-2 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] shrink-0">
           <!-- Viewport preset buttons -->
           <div class="flex items-center gap-1">
-            <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8" data-preset="mobile" title="手机 375×667">
+            <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8" data-preset="mobile" title="${t('preview.mobile')} 375×667">
               <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-smartphone"></use></svg>
             </button>
-            <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8" data-preset="tablet" title="平板 768×1024">
+            <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8" data-preset="tablet" title="${t('preview.tablet')} 768×1024">
               <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-tablet"></use></svg>
             </button>
-            <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8 active" data-preset="laptop" title="笔记本 1280×800">
+            <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8 active" data-preset="laptop" title="${t('preview.laptop')} 1280×800">
               <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-laptop"></use></svg>
             </button>
-            <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8" data-preset="desktop" title="台式机 1920×1080">
+            <button class="preview-preset-btn btn btn-icon btn-ghost w-8 h-8" data-preset="desktop" title="${t('preview.desktop')} 1920×1080">
               <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-monitor"></use></svg>
             </button>
           </div>
@@ -50,12 +54,12 @@ export class PreviewPanel {
           <div class="flex-1"></div>
 
           <!-- Refresh button -->
-          <button class="btn btn-icon btn-ghost w-8 h-8" id="refresh-btn" title="刷新预览">
+          <button class="btn btn-icon btn-ghost w-8 h-8" id="refresh-btn" title="${t('preview.refresh')}">
             <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-refresh"></use></svg>
           </button>
 
           <!-- Fullscreen button -->
-          <button class="btn btn-icon btn-ghost w-8 h-8" id="fullscreen-btn" title="全屏预览">
+          <button class="btn btn-icon btn-ghost w-8 h-8" id="fullscreen-btn" title="${t('preview.fullscreen')}">
             <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-maximize"></use></svg>
           </button>
         </div>
@@ -79,6 +83,7 @@ export class PreviewPanel {
     `;
 
     this.iframe = this.container.querySelector('#preview-iframe');
+    if (this.srcdoc) this.iframe.srcdoc = this.srcdoc;
     this.setupPresetButtons();
     this.setupResizeHandles();
     this.setupToolbarActions();
@@ -181,5 +186,9 @@ export class PreviewPanel {
         panel.requestFullscreen();
       }
     });
+  }
+
+  destroy() {
+    window.removeEventListener('locale-change', this._localeHandler);
   }
 }

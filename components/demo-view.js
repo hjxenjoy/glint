@@ -8,6 +8,7 @@ import { formatRelative, formatFull } from 'utils/date.js';
 import { PreviewPanel } from 'components/preview-panel.js';
 import { confirm } from 'components/modal.js';
 import { toast } from 'components/toast.js';
+import { t } from 'utils/i18n.js';
 
 function escapeHtml(str) {
   return String(str || '')
@@ -24,6 +25,8 @@ export class DemoView {
     this.assets = [];
     this.project = null;
     this.previewPanel = null;
+    this._localeHandler = () => this.init();
+    window.addEventListener('locale-change', this._localeHandler);
     this.init();
   }
 
@@ -38,7 +41,7 @@ export class DemoView {
       [this.demo, this.assets] = await Promise.all([getDemo(demoId), getAssetsByDemo(demoId)]);
 
       if (!this.demo) {
-        this.renderError('Demo 不存在');
+        this.renderError(t('demo.not_found'));
         return;
       }
 
@@ -54,7 +57,7 @@ export class DemoView {
       }
     } catch (err) {
       console.error('DemoView init error:', err);
-      this.renderError('加载 Demo 失败');
+      this.renderError(t('demo.load_error'));
     }
   }
 
@@ -93,6 +96,8 @@ export class DemoView {
     const demo = this.demo;
     const files = demo.files || [];
     const tags = demo.tags || [];
+    const n = files.length;
+    const an = this.assets.length;
 
     return `
       <!-- Title + actions -->
@@ -103,9 +108,9 @@ export class DemoView {
           </h1>
           <a href="#/demos/${escapeHtml(demo.id)}/edit"
              class="btn btn-secondary btn-sm shrink-0 gap-1"
-             title="编辑">
+             title="${escapeHtml(t('demo.edit_btn'))}">
             <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-edit"></use></svg>
-            编辑
+            ${t('demo.edit_btn')}
           </a>
         </div>
 
@@ -119,7 +124,11 @@ export class DemoView {
             ${escapeHtml(this.project.title)}
           </a>
         `
-            : ''
+            : `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border border-[var(--color-border)] text-[var(--color-text-tertiary)] mb-1">
+            ${t('demo.no_project')}
+          </span>
+        `
         }
       </div>
 
@@ -158,8 +167,8 @@ export class DemoView {
       <!-- Files list -->
       <div class="px-4 py-3 border-b border-[var(--color-border)]">
         <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-medium text-[var(--color-text-tertiary)] uppercase tracking-wider">文件</span>
-          <span class="text-xs text-[var(--color-text-tertiary)]">${files.length + this.assets.length} 个</span>
+          <span class="text-xs font-medium text-[var(--color-text-tertiary)] uppercase tracking-wider">${t('demo.files')}</span>
+          <span class="text-xs text-[var(--color-text-tertiary)]">${t('demo.files_count', { n })}${an > 0 ? ' / ' + t('demo.assets_count', { n: an }) : ''}</span>
         </div>
         <ul class="space-y-1">
           ${files
@@ -189,11 +198,11 @@ export class DemoView {
       <!-- Timestamps -->
       <div class="px-4 py-3 border-b border-[var(--color-border)] space-y-2">
         <div class="flex items-center justify-between text-xs">
-          <span class="text-[var(--color-text-tertiary)]">创建时间</span>
+          <span class="text-[var(--color-text-tertiary)]">${t('demo.created')}</span>
           <span class="text-[var(--color-text-secondary)]" title="${formatFull(demo.createdAt)}">${formatRelative(demo.createdAt)}</span>
         </div>
         <div class="flex items-center justify-between text-xs">
-          <span class="text-[var(--color-text-tertiary)]">更新时间</span>
+          <span class="text-[var(--color-text-tertiary)]">${t('demo.updated')}</span>
           <span class="text-[var(--color-text-secondary)]" title="${formatFull(demo.updatedAt)}">${formatRelative(demo.updatedAt)}</span>
         </div>
       </div>
@@ -205,7 +214,7 @@ export class DemoView {
       <div class="px-4 py-4 border-t border-[var(--color-border)]">
         <button class="btn btn-danger w-full gap-2 justify-center" id="delete-demo-btn">
           <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-trash"></use></svg>
-          删除 Demo
+          ${t('demo.delete_btn')}
         </button>
       </div>
     `;
@@ -218,10 +227,10 @@ export class DemoView {
 
   async handleDelete() {
     const confirmed = await confirm({
-      title: '删除 Demo',
-      message: `确定要删除"${this.demo.title}"吗？此操作不可撤销，所有文件和资源将永久删除。`,
-      confirmText: '删除',
-      cancelText: '取消',
+      title: t('demo.delete.confirm.title'),
+      message: t('demo.delete.confirm.message'),
+      confirmText: t('demo.delete_btn'),
+      cancelText: t('editor.cancel'),
       danger: true,
     });
 
@@ -294,5 +303,9 @@ export class DemoView {
         <a href="#/" class="btn btn-secondary btn-sm">返回首页</a>
       </div>
     `;
+  }
+
+  destroy() {
+    window.removeEventListener('locale-change', this._localeHandler);
   }
 }

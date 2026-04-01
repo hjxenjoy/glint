@@ -1,9 +1,13 @@
+import { t } from 'utils/i18n.js';
+
 export class TagInput {
-  constructor(container, { value = [], onChange = null, placeholder = '添加标签...' } = {}) {
+  constructor(container, { value = [], onChange = null, placeholder = '' } = {}) {
     this.container = container;
     this.tags = [...value];
     this.onChange = onChange;
     this.placeholder = placeholder;
+    this._localeHandler = () => this.render();
+    window.addEventListener('locale-change', this._localeHandler);
     this.render();
   }
 
@@ -17,6 +21,7 @@ export class TagInput {
   }
 
   render() {
+    const placeholder = this.placeholder || t('tag.placeholder');
     this.container.innerHTML = `
       <div class="tag-input-container flex flex-wrap gap-1.5 p-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] min-h-10 cursor-text focus-within:ring-2 focus-within:ring-[var(--color-accent)] focus-within:border-[var(--color-accent)] transition-colors">
         ${this.tags
@@ -24,7 +29,7 @@ export class TagInput {
             (tag) => `
           <span class="tag flex items-center gap-1">
             ${escapeHtml(tag)}
-            <button data-remove="${escapeHtml(tag)}" class="opacity-60 hover:opacity-100" aria-label="删除标签">
+            <button data-remove="${escapeHtml(tag)}" class="opacity-60 hover:opacity-100" aria-label="${escapeHtml(t('common.delete'))}">
               <svg class="w-3 h-3"><use href="icons/sprite.svg#icon-close"></use></svg>
             </button>
           </span>
@@ -34,7 +39,7 @@ export class TagInput {
         <input
           type="text"
           class="flex-1 min-w-24 outline-none bg-transparent text-sm text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)]"
-          placeholder="${this.tags.length === 0 ? escapeHtml(this.placeholder) : ''}"
+          placeholder="${this.tags.length === 0 ? escapeHtml(placeholder) : ''}"
         />
       </div>
     `;
@@ -76,6 +81,10 @@ export class TagInput {
     this.tags = this.tags.filter((t) => t !== tag);
     this.onChange?.(this.tags);
     this.render();
+  }
+
+  destroy() {
+    window.removeEventListener('locale-change', this._localeHandler);
   }
 }
 

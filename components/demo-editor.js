@@ -8,6 +8,7 @@ import { formatFull } from 'utils/date.js';
 import { toast } from 'components/toast.js';
 import { confirm } from 'components/modal.js';
 import { TagInput } from 'components/tag-input.js';
+import { t } from 'utils/i18n.js';
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -68,6 +69,8 @@ export class DemoEditor {
     /** Inline editor open for this filename, or null */
     this.openEditorFile = null;
     this.tagInput = null;
+    this._localeHandler = () => this.render();
+    window.addEventListener('locale-change', this._localeHandler);
     this.init();
   }
 
@@ -112,23 +115,23 @@ export class DemoEditor {
         <div class="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] shrink-0">
           <a href="#/demos/${escapeHtml(this.demo.id)}"
              class="btn btn-icon btn-ghost"
-             title="返回预览"
-             aria-label="返回预览">
+             title="${escapeHtml(t('editor.back'))}"
+             aria-label="${escapeHtml(t('editor.back'))}">
             <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-arrow-left"></use></svg>
           </a>
           <h1 class="flex-1 text-sm font-semibold text-[var(--color-text-primary)] truncate" id="editor-title-display">
             ${escapeHtml(this.demo.title)}
           </h1>
-          <button class="btn btn-primary btn-sm" id="save-btn">保存</button>
-          <a href="#/demos/${escapeHtml(this.demo.id)}" class="btn btn-secondary btn-sm">取消</a>
+          <button class="btn btn-primary btn-sm" id="save-btn">${t('editor.save')}</button>
+          <a href="#/demos/${escapeHtml(this.demo.id)}" class="btn btn-secondary btn-sm">${t('editor.cancel')}</a>
         </div>
 
         <!-- Tabs -->
         <div class="flex gap-0 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] shrink-0 px-4">
           <button class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${this.activeTab === 'files' ? 'border-[var(--color-accent)] text-[var(--color-accent)]' : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}"
-                  data-tab="files">文件</button>
+                  data-tab="files">${t('editor.tab.files')}</button>
           <button class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${this.activeTab === 'meta' ? 'border-[var(--color-accent)] text-[var(--color-accent)]' : 'border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'}"
-                  data-tab="meta">元数据</button>
+                  data-tab="meta">${t('editor.tab.metadata')}</button>
         </div>
 
         <!-- Tab content -->
@@ -174,21 +177,21 @@ export class DemoEditor {
       <div class="p-4 space-y-6">
         <!-- Upload zone -->
         <div class="space-y-2">
-          <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">上传文件</h2>
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">${t('editor.upload')}</h2>
           <div id="drop-zone"
                class="border-2 border-dashed border-[var(--color-border)] rounded-xl p-8 text-center cursor-pointer hover:border-[var(--color-accent)] hover:bg-[var(--color-bg-hover)] transition-colors">
             <svg class="w-8 h-8 mx-auto mb-2 text-[var(--color-text-tertiary)]">
               <use href="icons/sprite.svg#icon-upload"></use>
             </svg>
-            <p class="text-sm text-[var(--color-text-secondary)] mb-3">将文件拖放至此，或</p>
+            <p class="text-sm text-[var(--color-text-secondary)] mb-3">${t('editor.drop_zone')}</p>
             <div class="flex justify-center gap-2">
               <label class="btn btn-secondary btn-sm cursor-pointer">
-                点击上传文件
+                ${t('editor.upload')}
                 <input type="file" class="hidden" id="file-input" multiple
                        accept=".html,.css,.js,.json,.png,.jpg,.jpeg,.gif,.svg,.webp">
               </label>
               <label class="btn btn-secondary btn-sm cursor-pointer">
-                上传文件夹
+                ${t('editor.upload_folder')}
                 <input type="file" class="hidden" id="folder-input" multiple webkitdirectory>
               </label>
             </div>
@@ -200,13 +203,13 @@ export class DemoEditor {
           files.length > 0
             ? `
         <div class="space-y-2">
-          <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">文本文件</h2>
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">${t('editor.tab.files')}</h2>
           <div class="rounded-lg border border-[var(--color-border)] divide-y divide-[var(--color-border)]" id="file-list">
             ${fileRows}
           </div>
         </div>
         `
-            : ''
+            : `<p class="text-sm text-[var(--color-text-tertiary)]">${t('editor.no_files')}</p>`
         }
 
         <!-- Assets -->
@@ -214,7 +217,7 @@ export class DemoEditor {
           assets.length > 0
             ? `
         <div class="space-y-2">
-          <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">图片资源</h2>
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-[var(--color-text-tertiary)]">${t('editor.assets_section')}</h2>
           <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4" id="asset-list">
             ${assetRows}
           </div>
@@ -225,7 +228,7 @@ export class DemoEditor {
 
         <!-- Total size -->
         <p class="text-xs text-[var(--color-text-tertiary)]">
-          文件总大小: <span class="font-medium">${escapeHtml(formatBytes(totalBytes))}</span>
+          ${t('editor.total_size')}: <span class="font-medium">${escapeHtml(formatBytes(totalBytes))}</span>
         </p>
       </div>
     `;
@@ -247,12 +250,12 @@ export class DemoEditor {
           </svg>
           <span class="flex-1 text-sm text-[var(--color-text-primary)] truncate font-mono">${escapeHtml(file.name)}</span>
           <span class="text-xs text-[var(--color-text-tertiary)] shrink-0">${escapeHtml(formatBytes(sizeBytes))}</span>
-          ${isEntry ? `<span class="shrink-0 text-xs px-1.5 py-0.5 rounded bg-[var(--color-accent)] text-white font-medium">⭐ 入口文件</span>` : ''}
+          ${isEntry ? `<span class="shrink-0 text-xs px-1.5 py-0.5 rounded bg-[var(--color-accent)] text-white font-medium">⭐ ${t('editor.entry_file')}</span>` : ''}
           <div class="flex items-center gap-1 shrink-0">
             ${
               isText
                 ? `
-            <button class="btn btn-icon btn-ghost w-7 h-7 edit-file-btn" data-filename="${escapeHtml(file.name)}" title="编辑">
+            <button class="btn btn-icon btn-ghost w-7 h-7 edit-file-btn" data-filename="${escapeHtml(file.name)}" title="${escapeHtml(t('editor.file.edit'))}">
               <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-edit"></use></svg>
             </button>`
                 : ''
@@ -260,12 +263,12 @@ export class DemoEditor {
             ${
               isHtml && !isEntry
                 ? `
-            <button class="btn btn-ghost btn-sm text-xs set-entry-btn" data-filename="${escapeHtml(file.name)}" title="设为入口文件">
-              设为入口文件
+            <button class="btn btn-ghost btn-sm text-xs set-entry-btn" data-filename="${escapeHtml(file.name)}" title="${escapeHtml(t('editor.set_entry'))}">
+              ${t('editor.set_entry')}
             </button>`
                 : ''
             }
-            <button class="btn btn-icon btn-ghost w-7 h-7 text-red-500 hover:text-red-600 delete-file-btn" data-filename="${escapeHtml(file.name)}" title="删除">
+            <button class="btn btn-icon btn-ghost w-7 h-7 text-red-500 hover:text-red-600 delete-file-btn" data-filename="${escapeHtml(file.name)}" title="${escapeHtml(t('editor.file.delete'))}">
               <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-trash"></use></svg>
             </button>
           </div>
@@ -276,11 +279,12 @@ export class DemoEditor {
         <div class="border-t border-[var(--color-border)] bg-[var(--color-bg-primary)]">
           <div class="flex items-center justify-between px-4 py-2 bg-[var(--color-bg-tertiary)] border-b border-[var(--color-border)]">
             <span class="text-xs text-[var(--color-text-tertiary)] font-mono">${escapeHtml(file.name)}</span>
-            <button class="btn btn-sm btn-primary save-inline-btn" data-filename="${escapeHtml(file.name)}">保存修改</button>
+            <button class="btn btn-sm btn-primary save-inline-btn" data-filename="${escapeHtml(file.name)}">${t('editor.save')}</button>
           </div>
           <textarea
             class="w-full h-64 p-3 text-xs font-mono bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] resize-y outline-none border-none"
             spellcheck="false"
+            placeholder="${escapeHtml(t('editor.code.placeholder'))}"
             data-editor="${escapeHtml(file.name)}"
           >${escapeHtml(content)}</textarea>
         </div>
@@ -314,7 +318,7 @@ export class DemoEditor {
             <p class="text-xs text-[var(--color-text-primary)] truncate font-mono">${escapeHtml(asset.filename)}</p>
             <p class="text-xs text-[var(--color-text-tertiary)]">${escapeHtml(formatBytes(sizeBytes))}</p>
           </div>
-          <button class="btn btn-icon btn-ghost w-6 h-6 text-red-500 hover:text-red-600 delete-asset-btn shrink-0" data-asset-id="${escapeHtml(asset.id)}" title="删除资源">
+          <button class="btn btn-icon btn-ghost w-6 h-6 text-red-500 hover:text-red-600 delete-asset-btn shrink-0" data-asset-id="${escapeHtml(asset.id)}" title="${escapeHtml(t('editor.file.delete'))}">
             <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-trash"></use></svg>
           </button>
         </div>
@@ -497,14 +501,14 @@ export class DemoEditor {
         <!-- Title -->
         <div class="space-y-1.5">
           <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="meta-title">
-            标题 <span class="text-red-500">*</span>
+            ${t('editor.title')} <span class="text-red-500">*</span>
           </label>
           <input
             type="text"
             id="meta-title"
             class="input w-full"
             value="${escapeHtml(d.title)}"
-            placeholder="Demo 标题"
+            placeholder="${escapeHtml(t('editor.title.placeholder'))}"
             required
           >
         </div>
@@ -512,28 +516,28 @@ export class DemoEditor {
         <!-- Notes -->
         <div class="space-y-1.5">
           <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="meta-notes">
-            备注
+            ${t('editor.notes')}
           </label>
           <textarea
             id="meta-notes"
             class="input w-full h-24 resize-y"
-            placeholder="描述这个 Demo…"
+            placeholder="${escapeHtml(t('editor.notes.placeholder'))}"
           >${escapeHtml(d.notes || '')}</textarea>
         </div>
 
         <!-- Tags -->
         <div class="space-y-1.5">
-          <label class="block text-sm font-medium text-[var(--color-text-primary)]">标签</label>
+          <label class="block text-sm font-medium text-[var(--color-text-primary)]">${t('editor.tags')}</label>
           <div id="tag-input-host"></div>
         </div>
 
         <!-- Project selector -->
         <div class="space-y-1.5">
           <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="meta-project">
-            所属项目
+            ${t('editor.project')}
           </label>
           <select id="meta-project" class="input w-full">
-            <option value="" ${!d.projectId ? 'selected' : ''}>无项目（独立 Demo）</option>
+            <option value="" ${!d.projectId ? 'selected' : ''}>${t('editor.no_project')}</option>
             ${projectOptions}
           </select>
         </div>
@@ -544,7 +548,7 @@ export class DemoEditor {
             ? `
         <div class="space-y-1.5">
           <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="meta-entry">
-            入口文件
+            ${t('editor.entry_file_label')}
           </label>
           <select id="meta-entry" class="input w-full">
             ${htmlFiles
@@ -562,11 +566,11 @@ export class DemoEditor {
         <!-- Timestamps -->
         <div class="grid grid-cols-2 gap-4 pt-2 border-t border-[var(--color-border)]">
           <div>
-            <p class="text-xs text-[var(--color-text-tertiary)] mb-0.5">创建时间</p>
+            <p class="text-xs text-[var(--color-text-tertiary)] mb-0.5">${t('editor.created')}</p>
             <p class="text-sm text-[var(--color-text-secondary)]">${escapeHtml(formatFull(d.createdAt))}</p>
           </div>
           <div>
-            <p class="text-xs text-[var(--color-text-tertiary)] mb-0.5">更新时间</p>
+            <p class="text-xs text-[var(--color-text-tertiary)] mb-0.5">${t('editor.updated')}</p>
             <p class="text-sm text-[var(--color-text-secondary)]">${escapeHtml(formatFull(d.updatedAt))}</p>
           </div>
         </div>
@@ -619,7 +623,7 @@ export class DemoEditor {
   async save() {
     const title = (this.demo.title || '').trim();
     if (!title) {
-      toast.error('标题不能为空');
+      toast.error(t('editor.validation.title'));
       // Switch to meta tab so user can see the issue
       this.activeTab = 'meta';
       this.render();
@@ -669,17 +673,21 @@ export class DemoEditor {
       this.editedContent = {};
       this.deletedAssetIds.clear();
 
-      toast.success('已保存');
+      toast.success(t('editor.save.success'));
       appState.notifyDataChanged('demos');
       appState.navigate(`#/demos/${this.demo.id}`);
     } catch (err) {
-      toast.error('保存失败: ' + err.message);
+      toast.error(t('editor.save.error'));
     } finally {
       if (saveBtn) {
         saveBtn.disabled = false;
-        saveBtn.textContent = '保存';
+        saveBtn.textContent = t('editor.save');
       }
     }
+  }
+
+  destroy() {
+    window.removeEventListener('locale-change', this._localeHandler);
   }
 }
 
@@ -717,6 +725,8 @@ export class NewDemoView {
     this.htmlContent = '';
     this.projects = [];
     this.tagInput = null;
+    this._localeHandler = () => this.render();
+    window.addEventListener('locale-change', this._localeHandler);
     this.init();
   }
 
@@ -740,15 +750,15 @@ export class NewDemoView {
       <div class="flex flex-col h-full overflow-hidden">
         <!-- Header -->
         <div class="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] shrink-0">
-          <a href="#/" class="btn btn-icon btn-ghost" aria-label="返回">
+          <a href="#/" class="btn btn-icon btn-ghost" aria-label="${escapeHtml(t('editor.back'))}">
             <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-arrow-left"></use></svg>
           </a>
-          <h1 class="text-sm font-semibold text-[var(--color-text-primary)]">新建 Demo</h1>
+          <h1 class="text-sm font-semibold text-[var(--color-text-primary)]">${t('new_demo.title')}</h1>
         </div>
 
         <!-- Method cards -->
         <div class="flex-1 overflow-y-auto p-6">
-          <p class="text-sm text-[var(--color-text-secondary)] mb-6">选择创建方式</p>
+          <p class="text-sm text-[var(--color-text-secondary)] mb-6">${t('new_demo.step1')}</p>
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-2xl">
 
             <!-- Paste HTML -->
@@ -759,8 +769,8 @@ export class NewDemoView {
                   <svg class="w-5 h-5 text-blue-500"><use href="icons/sprite.svg#icon-code"></use></svg>
                 </div>
                 <div>
-                  <h3 class="text-sm font-semibold text-[var(--color-text-primary)] mb-1">粘贴 / 输入 HTML</h3>
-                  <p class="text-xs text-[var(--color-text-secondary)]">直接粘贴 HTML 代码，快速创建单文件 Demo</p>
+                  <h3 class="text-sm font-semibold text-[var(--color-text-primary)] mb-1">${t('new_demo.method.paste')}</h3>
+                  <p class="text-xs text-[var(--color-text-secondary)]">${t('new_demo.method.paste.desc')}</p>
                 </div>
               </div>
             </button>
@@ -772,8 +782,8 @@ export class NewDemoView {
                   <svg class="w-5 h-5 text-green-500"><use href="icons/sprite.svg#icon-upload"></use></svg>
                 </div>
                 <div>
-                  <h3 class="text-sm font-semibold text-[var(--color-text-primary)] mb-1">上传文件</h3>
-                  <p class="text-xs text-[var(--color-text-secondary)]">选择一个或多个文件（HTML、CSS、JS、图片等）</p>
+                  <h3 class="text-sm font-semibold text-[var(--color-text-primary)] mb-1">${t('new_demo.method.upload')}</h3>
+                  <p class="text-xs text-[var(--color-text-secondary)]">${t('new_demo.method.upload.desc')}</p>
                 </div>
               </div>
               <input type="file" class="hidden" id="new-file-input" multiple
@@ -787,8 +797,8 @@ export class NewDemoView {
                   <svg class="w-5 h-5 text-amber-500"><use href="icons/sprite.svg#icon-folder-plus"></use></svg>
                 </div>
                 <div>
-                  <h3 class="text-sm font-semibold text-[var(--color-text-primary)] mb-1">上传文件夹</h3>
-                  <p class="text-xs text-[var(--color-text-secondary)]">上传整个项目文件夹，自动识别入口文件</p>
+                  <h3 class="text-sm font-semibold text-[var(--color-text-primary)] mb-1">${t('new_demo.method.folder')}</h3>
+                  <p class="text-xs text-[var(--color-text-secondary)]">${t('new_demo.method.folder.desc')}</p>
                 </div>
               </div>
               <input type="file" class="hidden" id="new-folder-input" multiple webkitdirectory>
@@ -802,8 +812,8 @@ export class NewDemoView {
                   <svg class="w-5 h-5 text-purple-500"><use href="icons/sprite.svg#icon-file"></use></svg>
                 </div>
                 <div>
-                  <h3 class="text-sm font-semibold text-[var(--color-text-primary)] mb-1">空白 Demo</h3>
-                  <p class="text-xs text-[var(--color-text-secondary)]">从最小 HTML 模板开始，自由编辑</p>
+                  <h3 class="text-sm font-semibold text-[var(--color-text-primary)] mb-1">${t('new_demo.method.blank')}</h3>
+                  <p class="text-xs text-[var(--color-text-secondary)]">${t('new_demo.method.blank.desc')}</p>
                 </div>
               </div>
             </button>
@@ -885,10 +895,10 @@ export class NewDemoView {
       <div class="flex flex-col h-full overflow-hidden">
         <!-- Header -->
         <div class="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] shrink-0">
-          <button class="btn btn-icon btn-ghost" id="back-to-step1" aria-label="返回">
+          <button class="btn btn-icon btn-ghost" id="back-to-step1" aria-label="${escapeHtml(t('new_demo.back'))}">
             <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-arrow-left"></use></svg>
           </button>
-          <h1 class="text-sm font-semibold text-[var(--color-text-primary)]">新建 Demo — 设置信息</h1>
+          <h1 class="text-sm font-semibold text-[var(--color-text-primary)]">${t('new_demo.title')} — ${t('new_demo.step2')}</h1>
         </div>
 
         <div class="flex-1 overflow-y-auto p-4">
@@ -905,7 +915,7 @@ export class NewDemoView {
               <textarea
                 id="paste-html"
                 class="input w-full h-48 font-mono text-xs resize-y"
-                placeholder="粘贴 HTML 代码…"
+                placeholder="${escapeHtml(t('editor.code.placeholder'))}"
                 spellcheck="false"
               >${escapeHtml(entryContent)}</textarea>
             </div>
@@ -947,7 +957,7 @@ export class NewDemoView {
                 ? `
             <!-- Multiple HTML files: let user pick entry -->
             <div class="space-y-1.5">
-              <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="new-entry-select">入口文件</label>
+              <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="new-entry-select">${t('new_demo.title_label')}</label>
               <select id="new-entry-select" class="input w-full">
                 ${htmlFiles
                   .map(
@@ -964,28 +974,28 @@ export class NewDemoView {
             <!-- Title -->
             <div class="space-y-1.5">
               <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="new-title">
-                标题 <span class="text-red-500">*</span>
+                ${t('new_demo.title_label')} <span class="text-red-500">*</span>
               </label>
-              <input type="text" id="new-title" class="input w-full" value="${escapeHtml(this.title)}" placeholder="Demo 标题" required>
+              <input type="text" id="new-title" class="input w-full" value="${escapeHtml(this.title)}" placeholder="${escapeHtml(t('new_demo.title_placeholder'))}" required>
             </div>
 
             <!-- Notes -->
             <div class="space-y-1.5">
-              <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="new-notes">备注</label>
-              <textarea id="new-notes" class="input w-full h-20 resize-y" placeholder="描述这个 Demo…">${escapeHtml(this.notes)}</textarea>
+              <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="new-notes">${t('new_demo.notes_label')}</label>
+              <textarea id="new-notes" class="input w-full h-20 resize-y" placeholder="${escapeHtml(t('new_demo.notes_placeholder'))}">${escapeHtml(this.notes)}</textarea>
             </div>
 
             <!-- Tags -->
             <div class="space-y-1.5">
-              <label class="block text-sm font-medium text-[var(--color-text-primary)]">标签</label>
+              <label class="block text-sm font-medium text-[var(--color-text-primary)]">${t('new_demo.tags_label')}</label>
               <div id="new-tag-host"></div>
             </div>
 
             <!-- Project -->
             <div class="space-y-1.5">
-              <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="new-project">所属项目</label>
+              <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="new-project">${t('new_demo.project_label')}</label>
               <select id="new-project" class="input w-full">
-                <option value="" ${!this.projectId ? 'selected' : ''}>无项目（独立 Demo）</option>
+                <option value="" ${!this.projectId ? 'selected' : ''}>${t('new_demo.no_project')}</option>
                 ${projectOptions}
               </select>
             </div>
@@ -993,8 +1003,8 @@ export class NewDemoView {
             <!-- Preview -->
             <div class="space-y-1.5">
               <div class="flex items-center justify-between">
-                <label class="block text-sm font-medium text-[var(--color-text-primary)]">预览</label>
-                <button class="btn btn-secondary btn-sm" id="refresh-preview-btn">刷新预览</button>
+                <label class="block text-sm font-medium text-[var(--color-text-primary)]">${t('new_demo.preview')}</label>
+                <button class="btn btn-secondary btn-sm" id="refresh-preview-btn">${t('preview.refresh')}</button>
               </div>
               <div class="rounded-lg border border-[var(--color-border)] overflow-hidden bg-[var(--color-bg-tertiary)]">
                 <iframe
@@ -1008,8 +1018,8 @@ export class NewDemoView {
 
             <!-- Create button -->
             <div class="flex gap-3 pt-2">
-              <button class="btn btn-primary flex-1" id="create-btn">创建 Demo</button>
-              <a href="#/" class="btn btn-secondary">取消</a>
+              <button class="btn btn-primary flex-1" id="create-btn">${t('new_demo.create')}</button>
+              <a href="#/" class="btn btn-secondary">${t('editor.cancel')}</a>
             </div>
 
           </div>
@@ -1111,7 +1121,7 @@ export class NewDemoView {
     const title = (titleEl?.value || this.title || '').trim();
 
     if (!title) {
-      toast.error('标题不能为空');
+      toast.error(t('new_demo.validation.title'));
       titleEl?.focus();
       return;
     }
@@ -1123,7 +1133,7 @@ export class NewDemoView {
       const pasteEl = this.container.querySelector('#paste-html');
       const pastedContent = pasteEl?.value || this._pastedHtml || '';
       if (!pastedContent.trim()) {
-        toast.error('请输入 HTML 内容');
+        toast.error(t('new_demo.validation.files'));
         pasteEl?.focus();
         return;
       }
@@ -1135,7 +1145,7 @@ export class NewDemoView {
     const createBtn = this.container.querySelector('#create-btn');
     if (createBtn) {
       createBtn.disabled = true;
-      createBtn.textContent = '创建中…';
+      createBtn.textContent = t('new_demo.creating');
     }
 
     try {
@@ -1160,15 +1170,19 @@ export class NewDemoView {
         )
       );
 
-      toast.success('Demo 创建成功');
+      toast.success(t('new_demo.success'));
       appState.notifyDataChanged('demos');
       appState.navigate(`#/demos/${newDemo.id}`);
     } catch (err) {
-      toast.error('创建失败: ' + err.message);
+      toast.error(t('new_demo.error', { msg: err.message }));
       if (createBtn) {
         createBtn.disabled = false;
-        createBtn.textContent = '创建 Demo';
+        createBtn.textContent = t('new_demo.create');
       }
     }
+  }
+
+  destroy() {
+    window.removeEventListener('locale-change', this._localeHandler);
   }
 }

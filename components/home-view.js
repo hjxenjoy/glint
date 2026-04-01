@@ -5,6 +5,7 @@ import { deleteAssetsByDemo } from 'db/assets.js';
 import { formatRelative } from 'utils/date.js';
 import { confirm } from 'components/modal.js';
 import { toast } from 'components/toast.js';
+import { t } from 'utils/i18n.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -32,8 +33,8 @@ function renderDemoCard(demo, projectsMap) {
 
   const tagBadges = visibleTags
     .map(
-      (t) =>
-        `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] truncate max-w-[80px]">${escapeHtml(t)}</span>`
+      (tag) =>
+        `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] truncate max-w-[80px]">${escapeHtml(tag)}</span>`
     )
     .join('');
 
@@ -77,13 +78,13 @@ function renderDemoCard(demo, projectsMap) {
       <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
         <a href="#/demos/${escapeHtml(demo.id)}/edit"
            class="btn btn-icon w-7 h-7 bg-[var(--color-bg-primary)]/90 backdrop-blur-sm border border-[var(--color-border)] hover:border-[var(--color-accent)] shadow-sm"
-           title="编辑"
+           title="${t('demo.edit')}"
            data-action="edit"
            data-demo-id="${escapeHtml(demo.id)}">
           <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-pencil"></use></svg>
         </a>
         <button class="btn btn-icon w-7 h-7 bg-[var(--color-bg-primary)]/90 backdrop-blur-sm border border-[var(--color-border)] hover:border-red-400 hover:text-red-400 shadow-sm"
-                title="删除"
+                title="${t('demo.delete')}"
                 data-action="delete"
                 data-demo-id="${escapeHtml(demo.id)}">
           <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-trash"></use></svg>
@@ -120,11 +121,14 @@ export class HomeView {
     this.projects = [];
     this._onDataChanged = () => this.loadData();
     appState.addEventListener('data-changed', this._onDataChanged);
+    this._localeHandler = () => this.init();
+    window.addEventListener('locale-change', this._localeHandler);
     this.init();
   }
 
   destroy() {
     appState.removeEventListener('data-changed', this._onDataChanged);
+    window.removeEventListener('locale-change', this._localeHandler);
   }
 
   async init() {
@@ -179,12 +183,12 @@ export class HomeView {
         <!-- Page header -->
         <div class="flex items-start justify-between mb-8 gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-[var(--color-text-primary)] mb-1">你好，Glint ✦</h1>
-            <p class="text-sm text-[var(--color-text-secondary)]">管理和预览你的静态 HTML Demo</p>
+            <h1 class="text-2xl font-bold text-[var(--color-text-primary)] mb-1">${t('home.title')} ✦</h1>
+            <p class="text-sm text-[var(--color-text-secondary)]">${t('home.subtitle')}</p>
           </div>
           <a href="#/demos/new" class="btn btn-primary shrink-0 gap-2">
             <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-plus"></use></svg>
-            新建 Demo
+            ${t('home.new_demo')}
           </a>
         </div>
 
@@ -195,7 +199,7 @@ export class HomeView {
           <!-- Recent demos -->
           <section class="mb-10">
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">最近 Demo</h2>
+              <h2 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">${t('home.recent_demos')}</h2>
               <a href="#/demos" class="text-xs text-[var(--color-accent)] hover:underline">查看全部</a>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="recent-demos-grid">
@@ -209,7 +213,7 @@ export class HomeView {
           <!-- Projects section -->
           <section>
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">项目</h2>
+              <h2 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">${t('home.recent_projects')}</h2>
               <a href="#/demos/new" class="text-xs text-[var(--color-accent)] hover:underline">新建项目</a>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -234,13 +238,13 @@ export class HomeView {
         <div class="w-16 h-16 rounded-2xl bg-[var(--color-accent)]/10 flex items-center justify-center mb-5">
           <svg class="w-8 h-8 text-[var(--color-accent)]"><use href="icons/sprite.svg#icon-sparkles"></use></svg>
         </div>
-        <h2 class="text-xl font-semibold text-[var(--color-text-primary)] mb-2">还没有 Demo</h2>
+        <h2 class="text-xl font-semibold text-[var(--color-text-primary)] mb-2">${t('home.empty.title')}</h2>
         <p class="text-sm text-[var(--color-text-secondary)] mb-6 max-w-xs">
-          粘贴 HTML 代码或上传文件，开始管理你的静态 Demo 作品集。
+          ${t('home.empty.description')}
         </p>
         <a href="#/demos/new" class="btn btn-primary gap-2">
           <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-plus"></use></svg>
-          立即新建你的第一个 Demo
+          ${t('home.empty.cta')}
         </a>
       </div>
     `;
@@ -261,7 +265,7 @@ export class HomeView {
           <div class="flex-1 min-w-0">
             <p class="text-sm font-semibold text-[var(--color-text-primary)] truncate">${escapeHtml(project.title)}</p>
             <p class="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">
-              ${demoCount} 个 Demo · ${formatRelative(project.updatedAt)}
+              ${t('home.demos_count', { n: demoCount })} · ${formatRelative(project.updatedAt)}
             </p>
           </div>
         </div>
@@ -286,9 +290,9 @@ export class HomeView {
         const id = btn.dataset.demoId;
         const demo = this.demos.find((d) => d.id === id);
         const ok = await confirm({
-          title: '删除 Demo',
-          message: `确定要删除「${demo?.title || id}」吗？此操作无法撤销。`,
-          confirmText: '删除',
+          title: t('demo.delete.confirm.title'),
+          message: t('demo.delete.confirm.message', { title: demo?.title || id }),
+          confirmText: t('demo.delete'),
           danger: true,
         });
         if (!ok) return;
@@ -328,11 +332,14 @@ export class AllDemosView {
     this.groupByProject = false;
     this._onDataChanged = () => this.loadData();
     appState.addEventListener('data-changed', this._onDataChanged);
+    this._localeHandler = () => this.init();
+    window.addEventListener('locale-change', this._localeHandler);
     this.init();
   }
 
   destroy() {
     appState.removeEventListener('data-changed', this._onDataChanged);
+    window.removeEventListener('locale-change', this._localeHandler);
   }
 
   async init() {
@@ -362,7 +369,7 @@ export class AllDemosView {
         (d) =>
           d.title.toLowerCase().includes(q) ||
           (d.notes || '').toLowerCase().includes(q) ||
-          (d.tags || []).some((t) => t.toLowerCase().includes(q))
+          (d.tags || []).some((tag) => tag.toLowerCase().includes(q))
       );
     }
     if (this.filterTag) {
@@ -408,12 +415,12 @@ export class AllDemosView {
         <!-- Header -->
         <div class="flex items-start justify-between mb-6 gap-4">
           <div>
-            <h1 class="text-2xl font-bold text-[var(--color-text-primary)]">全部 Demo</h1>
-            <p class="text-sm text-[var(--color-text-secondary)] mt-0.5">${this.allDemos.length} 个 Demo</p>
+            <h1 class="text-2xl font-bold text-[var(--color-text-primary)]">${t('demos.title')}</h1>
+            <p class="text-sm text-[var(--color-text-secondary)] mt-0.5">${t('demos.count', { n: this.allDemos.length })}</p>
           </div>
           <a href="#/demos/new" class="btn btn-primary shrink-0 gap-2">
             <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-plus"></use></svg>
-            新建 Demo
+            ${t('demos.all_new_demo')}
           </a>
         </div>
 
@@ -426,7 +433,7 @@ export class AllDemosView {
             </svg>
             <input id="filter-search"
                    type="search"
-                   placeholder="搜索标题、备注、标签…"
+                   placeholder="${t('demos.filter.search')}"
                    value="${escapeHtml(this.filterQuery)}"
                    class="w-full pl-9 pr-3 h-9 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors" />
           </div>
@@ -436,8 +443,8 @@ export class AllDemosView {
             allTags.length > 0
               ? `<select id="filter-tag"
                          class="h-9 px-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors cursor-pointer">
-                   <option value="">全部标签</option>
-                   ${allTags.map((t) => `<option value="${escapeHtml(t)}" ${this.filterTag === t ? 'selected' : ''}>${escapeHtml(t)}</option>`).join('')}
+                   <option value="">${t('demos.filter.tag_all')}</option>
+                   ${allTags.map((tag) => `<option value="${escapeHtml(tag)}" ${this.filterTag === tag ? 'selected' : ''}>${escapeHtml(tag)}</option>`).join('')}
                  </select>`
               : ''
           }
@@ -445,9 +452,9 @@ export class AllDemosView {
           <!-- Sort -->
           <select id="filter-sort"
                   class="h-9 px-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors cursor-pointer">
-            <option value="updated" ${this.sortBy === 'updated' ? 'selected' : ''}>最近更新</option>
-            <option value="created" ${this.sortBy === 'created' ? 'selected' : ''}>最近创建</option>
-            <option value="title"   ${this.sortBy === 'title' ? 'selected' : ''}>名称</option>
+            <option value="updated" ${this.sortBy === 'updated' ? 'selected' : ''}>${t('demos.filter.sort.updated')}</option>
+            <option value="created" ${this.sortBy === 'created' ? 'selected' : ''}>${t('demos.filter.sort.created')}</option>
+            <option value="title"   ${this.sortBy === 'title' ? 'selected' : ''}>${t('demos.filter.sort.name')}</option>
           </select>
 
           <!-- Group by project toggle -->
@@ -455,7 +462,7 @@ export class AllDemosView {
                   class="h-9 px-3 rounded-lg border text-sm transition-colors gap-2 flex items-center
                          ${this.groupByProject ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10 text-[var(--color-accent)]' : 'border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)]'}">
             <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-folder"></use></svg>
-            按项目分组
+            ${t('demos.filter.group')}
           </button>
         </div>
 
@@ -508,7 +515,9 @@ export class AllDemosView {
     let html = '';
     for (const [key, demos] of groups) {
       const label =
-        key === '__standalone__' ? '独立 Demo' : (this.projectsMap.get(key)?.title ?? '未知项目');
+        key === '__standalone__'
+          ? t('demos.standalone')
+          : (this.projectsMap.get(key)?.title ?? '未知项目');
 
       html += `
         <section class="mb-8">
@@ -531,13 +540,13 @@ export class AllDemosView {
         </div>
         ${
           hasFilters
-            ? `<h2 class="text-base font-semibold text-[var(--color-text-primary)] mb-1">没有匹配的 Demo</h2>
-               <p class="text-sm text-[var(--color-text-secondary)]">尝试修改搜索词或清除过滤条件</p>`
-            : `<h2 class="text-base font-semibold text-[var(--color-text-primary)] mb-1">还没有 Demo</h2>
+            ? `<h2 class="text-base font-semibold text-[var(--color-text-primary)] mb-1">${t('demos.empty.no_match')}</h2>
+               <p class="text-sm text-[var(--color-text-secondary)]">${t('demos.empty.clear_filter')}</p>`
+            : `<h2 class="text-base font-semibold text-[var(--color-text-primary)] mb-1">${t('demos.empty.no_demos')}</h2>
                <p class="text-sm text-[var(--color-text-secondary)] mb-5">新建你的第一个 Demo 开始使用吧</p>
                <a href="#/demos/new" class="btn btn-primary gap-2">
                  <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-plus"></use></svg>
-                 新建 Demo
+                 ${t('demos.all_new_demo')}
                </a>`
         }
       </div>
@@ -597,9 +606,9 @@ export class AllDemosView {
         const id = btn.dataset.demoId;
         const demo = this.allDemos.find((d) => d.id === id);
         const ok = await confirm({
-          title: '删除 Demo',
-          message: `确定要删除「${demo?.title || id}」吗？此操作无法撤销。`,
-          confirmText: '删除',
+          title: t('demo.delete.confirm.title'),
+          message: t('demo.delete.confirm.message', { title: demo?.title || id }),
+          confirmText: t('demo.delete'),
           danger: true,
         });
         if (!ok) return;

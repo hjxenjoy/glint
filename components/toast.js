@@ -1,4 +1,6 @@
 // Toast notification system
+import { t } from 'utils/i18n.js';
+
 let toastContainer = null;
 
 function getContainer() {
@@ -28,7 +30,7 @@ export function showToast({ message, type = 'info', duration = 3000 }) {
   toast.innerHTML = `
     <svg class="w-5 h-5 shrink-0" aria-hidden="true"><use href="icons/sprite.svg#${config.icon}"></use></svg>
     <span class="text-sm font-medium flex-1">${escapeHtml(message)}</span>
-    <button class="shrink-0 opacity-70 hover:opacity-100" aria-label="关闭">
+    <button class="shrink-0 opacity-70 hover:opacity-100" aria-label="${t('modal.close')}">
       <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-close"></use></svg>
     </button>
   `;

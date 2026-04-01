@@ -5,18 +5,25 @@ import { getAssetsByDemo, saveAsset } from 'db/assets.js';
 import { exportAsJSON, triggerDownload, packExport, unpackImport } from 'utils/zip.js';
 import { getStorageEstimate, requestPersistence, formatBytes } from 'utils/storage-estimate.js';
 import { toast } from 'components/toast.js';
+import { t, getLocale, setLocale, getSupportedLocales } from 'utils/i18n.js';
 
-const TABS = [
-  { id: 'import-export', label: '导入/导出' },
-  { id: 'storage', label: '存储' },
-  { id: 'about', label: '关于' },
+const TABS = () => [
+  { id: 'import-export', label: t('settings.tab.import_export') },
+  { id: 'storage', label: t('settings.tab.storage') },
+  { id: 'about', label: t('settings.tab.about') },
 ];
 
 export class SettingsView {
   constructor(container) {
     this.container = container;
     this.activeTab = 'import-export';
+    this._localeHandler = () => this.render();
+    window.addEventListener('locale-change', this._localeHandler);
     this.render();
+  }
+
+  destroy() {
+    window.removeEventListener('locale-change', this._localeHandler);
   }
 
   render() {
@@ -26,8 +33,9 @@ export class SettingsView {
 
         <!-- Tab bar -->
         <div class="flex gap-1 p-1 rounded-xl bg-[var(--color-bg-secondary)] mb-6 border border-[var(--color-border)]">
-          ${TABS.map(
-            (tab) => `
+          ${TABS()
+            .map(
+              (tab) => `
             <button
               class="settings-tab flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors
                      ${
@@ -39,7 +47,8 @@ export class SettingsView {
               ${tab.label}
             </button>
           `
-          ).join('')}
+            )
+            .join('')}
         </div>
 
         <!-- Tab content -->
@@ -70,29 +79,38 @@ export class SettingsView {
 
   renderImportExportTab() {
     return `
+      <!-- Language -->
+      <div class="card p-6 mb-4">
+        <h3 class="font-semibold text-[var(--color-text-primary)] mb-3">${t('settings.language.title')}</h3>
+        <div class="flex gap-2">
+          <button data-lang="zh" class="btn ${getLocale() === 'zh' ? 'btn-primary' : 'btn-secondary'}">${t('settings.language.zh')}</button>
+          <button data-lang="en" class="btn ${getLocale() === 'en' ? 'btn-primary' : 'btn-secondary'}">${t('settings.language.en')}</button>
+        </div>
+      </div>
+
       <!-- Export -->
       <div class="card p-6 mb-4">
-        <h3 class="font-semibold text-[var(--color-text-primary)] mb-1">导出数据</h3>
-        <p class="text-sm text-[var(--color-text-secondary)] mb-4">将所有项目和 Demo 导出为文件</p>
+        <h3 class="font-semibold text-[var(--color-text-primary)] mb-1">${t('settings.export.title')}</h3>
+        <p class="text-sm text-[var(--color-text-secondary)] mb-4">${t('settings.export.description')}</p>
         <div class="flex gap-3 flex-wrap">
           <button id="export-json" class="btn btn-primary gap-2">
             <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-export"></use></svg>
-            导出为 JSON
+            ${t('settings.export.json')}
           </button>
           <button id="export-zip" class="btn btn-secondary gap-2">
             <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-download"></use></svg>
-            导出为 ZIP
+            ${t('settings.export.zip')}
           </button>
         </div>
         <div id="export-status" class="hidden mt-3 flex items-center gap-2 text-sm text-[var(--color-text-secondary)]">
           <div class="w-4 h-4 border-2 border-[var(--color-accent)] border-t-transparent rounded-full animate-spin"></div>
-          <span>正在导出...</span>
+          <span>${t('settings.export.exporting')}</span>
         </div>
       </div>
 
       <!-- Import -->
       <div class="card p-6">
-        <h3 class="font-semibold text-[var(--color-text-primary)] mb-1">导入数据</h3>
+        <h3 class="font-semibold text-[var(--color-text-primary)] mb-1">${t('settings.import.title')}</h3>
         <p class="text-sm text-[var(--color-text-secondary)] mb-4">从 JSON 或 ZIP 文件恢复数据</p>
         <div id="import-dropzone"
              class="border-2 border-dashed border-[var(--color-border)] rounded-xl p-8 text-center cursor-pointer
@@ -101,10 +119,9 @@ export class SettingsView {
             <use href="icons/sprite.svg#icon-upload"></use>
           </svg>
           <p class="text-sm text-[var(--color-text-secondary)]">
-            拖放 JSON 或 ZIP 文件到此处，或
-            <span class="text-[var(--color-accent)] cursor-pointer">点击选择文件</span>
+            ${t('settings.import.drop_zone')}
           </p>
-          <p class="text-xs text-[var(--color-text-tertiary)] mt-1">支持 .json 和 .zip 格式</p>
+          <p class="text-xs text-[var(--color-text-tertiary)] mt-1">${t('settings.import.formats')}</p>
           <input type="file" accept=".json,.zip" class="hidden" id="import-file-input" />
         </div>
 
@@ -123,12 +140,12 @@ export class SettingsView {
       <!-- Conflict dialog (hidden by default) -->
       <div id="conflict-dialog" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div class="card p-6 max-w-sm w-full mx-4">
-          <h3 class="font-semibold text-[var(--color-text-primary)] mb-2">检测到重复数据</h3>
+          <h3 class="font-semibold text-[var(--color-text-primary)] mb-2">${t('settings.import.conflict.title')}</h3>
           <p class="text-sm text-[var(--color-text-secondary)] mb-4" id="conflict-desc"></p>
           <div class="flex flex-col gap-2">
-            <button id="conflict-skip" class="btn btn-secondary w-full">跳过已存在</button>
-            <button id="conflict-overwrite" class="btn btn-secondary w-full">覆盖</button>
-            <button id="conflict-new" class="btn btn-primary w-full">全部导入为新记录</button>
+            <button id="conflict-skip" class="btn btn-secondary w-full">${t('settings.import.conflict.skip')}</button>
+            <button id="conflict-overwrite" class="btn btn-secondary w-full">${t('settings.import.conflict.overwrite')}</button>
+            <button id="conflict-new" class="btn btn-primary w-full">${t('settings.import.conflict.new')}</button>
           </div>
           <button id="conflict-cancel" class="btn btn-ghost w-full mt-2 text-sm">取消导入</button>
         </div>
@@ -141,11 +158,11 @@ export class SettingsView {
   renderStorageTab() {
     return `
       <div class="card p-6">
-        <h3 class="font-semibold text-[var(--color-text-primary)] mb-4">存储用量</h3>
+        <h3 class="font-semibold text-[var(--color-text-primary)] mb-4">${t('settings.storage.title')}</h3>
         <div class="mb-4">
           <div class="flex justify-between text-sm mb-1">
             <span id="usage-text" class="text-[var(--color-text-secondary)]">-</span>
-            <span id="quota-text" class="text-[var(--color-text-tertiary)]">配额: -</span>
+            <span id="quota-text" class="text-[var(--color-text-tertiary)]">${t('settings.storage.quota')}: -</span>
           </div>
           <div class="h-3 rounded-full bg-[var(--color-bg-tertiary)] overflow-hidden">
             <div id="usage-bar" class="h-full rounded-full bg-[var(--color-accent)] transition-all duration-500" style="width:0%"></div>
@@ -154,7 +171,7 @@ export class SettingsView {
         <div id="persistence-status" class="text-sm text-[var(--color-text-secondary)] mb-4"></div>
         <button id="request-persist-btn" class="btn btn-secondary gap-2">
           <svg class="w-4 h-4"><use href="icons/sprite.svg#icon-check"></use></svg>
-          请求持久化存储
+          ${t('settings.storage.request_persist')}
         </button>
       </div>
     `;
@@ -171,15 +188,15 @@ export class SettingsView {
           </svg>
           <div>
             <h2 class="text-xl font-bold text-[var(--color-text-primary)]">Glint</h2>
-            <span class="text-xs text-[var(--color-text-tertiary)]">v1.0.0</span>
+            <span class="text-xs text-[var(--color-text-tertiary)]">${t('settings.about.version')} v1.0.0</span>
           </div>
         </div>
         <p class="text-sm text-[var(--color-text-secondary)] mb-6">
-          一个用于管理和预览静态 HTML Demo 的浏览器工具
+          ${t('settings.about.description')}
         </p>
 
         <div class="mb-6">
-          <h4 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">技术栈</h4>
+          <h4 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">${t('settings.about.tech_stack')}</h4>
           <ul class="space-y-1.5 text-sm text-[var(--color-text-secondary)]">
             <li class="flex items-center gap-2">
               <svg class="w-3.5 h-3.5 text-[var(--color-accent)]"><use href="icons/sprite.svg#icon-check"></use></svg>
@@ -256,6 +273,13 @@ export class SettingsView {
 
     exportJsonBtn?.addEventListener('click', () => this.handleExportJson());
     exportZipBtn?.addEventListener('click', () => this.handleExportZip());
+
+    // Language switcher
+    this.container.querySelectorAll('[data-lang]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        setLocale(btn.dataset.lang);
+      });
+    });
 
     // Dropzone click
     dropzone?.addEventListener('click', () => fileInput?.click());
@@ -349,7 +373,7 @@ export class SettingsView {
         data = JSON.parse(text);
       }
     } catch (err) {
-      toast.error('文件解析失败：' + (err.message || '格式错误'));
+      toast.error(t('settings.import.error', { msg: err.message }));
       return;
     }
 
@@ -390,11 +414,7 @@ export class SettingsView {
         return;
       }
 
-      const parts = [];
-      if (demosCount > 0) parts.push(`${demosCount} 个 Demo`);
-      if (projectsCount > 0) parts.push(`${projectsCount} 个项目`);
-      if (descEl)
-        descEl.textContent = `检测到 ${parts.join('和')} 与现有数据 ID 重复，请选择处理方式：`;
+      if (descEl) descEl.textContent = t('settings.import.conflict.message', { n: totalConflicts });
 
       dialog.classList.remove('hidden');
 
@@ -528,11 +548,11 @@ export class SettingsView {
       const demoCount = demos.filter(
         (d) => !(existingDemoIds.has(d.id) && strategy === 'skip')
       ).length;
-      toast.success(`导入完成，共导入 ${demoCount} 个 Demo`);
+      toast.success(t('settings.import.success', { n: demoCount }));
       appState.notifyDataChanged('demos');
     } catch (err) {
       console.error('Import failed:', err);
-      toast.error('导入失败：' + (err.message || '未知错误'));
+      toast.error(t('settings.import.error', { msg: err.message }));
     } finally {
       if (progressEl) progressEl.classList.add('hidden');
     }
@@ -567,8 +587,10 @@ export class SettingsView {
 
     if (!estimate) return;
 
-    if (usageEl) usageEl.textContent = `已用 ${formatBytes(estimate.usage)}`;
-    if (quotaEl) quotaEl.textContent = `配额: ${formatBytes(estimate.quota)}`;
+    if (usageEl)
+      usageEl.textContent = `${t('settings.storage.used')} ${formatBytes(estimate.usage)}`;
+    if (quotaEl)
+      quotaEl.textContent = `${t('settings.storage.quota')}: ${formatBytes(estimate.quota)}`;
     if (barEl) {
       barEl.style.width = `${Math.min(estimate.percent, 100)}%`;
       if (estimate.percent > 90) {
@@ -585,9 +607,9 @@ export class SettingsView {
       persistStatusEl.innerHTML = persisted
         ? `<span class="text-green-600 dark:text-green-400 flex items-center gap-1">
              <svg class="w-3.5 h-3.5"><use href="icons/sprite.svg#icon-check"></use></svg>
-             已持久化存储
+             ${t('settings.storage.persistent')}
            </span>`
-        : `<span class="text-[var(--color-text-secondary)]">未持久化 — 建议定期导出备份，以防浏览器清理数据</span>`;
+        : `<span class="text-[var(--color-text-secondary)]">${t('settings.storage.not_persistent')}</span>`;
     }
   }
 }

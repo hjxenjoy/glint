@@ -1,4 +1,5 @@
 // Generic modal using native <dialog>
+import { t } from 'utils/i18n.js';
 
 export class Modal {
   constructor({ title, content, actions = [], onClose = null, size = 'md' }) {
@@ -12,7 +13,7 @@ export class Modal {
     this.dialog.innerHTML = `
       <div class="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
         <h2 class="text-base font-semibold text-[var(--color-text-primary)]">${escapeHtml(title)}</h2>
-        <button class="btn btn-icon btn-ghost" data-close aria-label="关闭">
+        <button class="btn btn-icon btn-ghost" data-close aria-label="${t('modal.close')}">
           <svg class="w-5 h-5"><use href="icons/sprite.svg#icon-close"></use></svg>
         </button>
       </div>
@@ -72,8 +73,8 @@ function escapeHtml(str) {
 export function confirm({
   title,
   message,
-  confirmText = '确认',
-  cancelText = '取消',
+  confirmText = t('modal.confirm'),
+  cancelText = t('modal.cancel'),
   danger = false,
 }) {
   return new Promise((resolve) => {
@@ -122,7 +123,7 @@ export function showAlert({ title, message }) {
       content: contentEl,
       actions: [
         {
-          label: '确定',
+          label: t('modal.alert_confirm'),
           variant: 'primary',
           onClick: () => {
             modal.close();
