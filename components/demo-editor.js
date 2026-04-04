@@ -1135,7 +1135,6 @@ export class NewDemoView {
         projectId: this.projectId,
         title,
         notes: this.container.querySelector('#new-notes')?.value || this.notes,
-        tags: [],
         entryFile: this.entryFile,
         files: filesToSave,
       });

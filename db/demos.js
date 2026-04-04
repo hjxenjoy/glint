@@ -37,7 +37,7 @@ export async function createDemo({
   projectId = null,
   title,
   notes = '',
-  tags = [],
+  tags,
   entryFile = 'index.html',
   files = [],
 }) {
@@ -47,7 +47,6 @@ export async function createDemo({
     projectId,
     title,
     notes,
-    tags,
     entryFile,
     files,
     createdAt: Date.now(),

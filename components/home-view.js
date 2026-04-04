@@ -126,7 +126,6 @@ export class HomeView {
   constructor(container) {
     this.container = container;
     this.demos = [];
-    this.projects = [];
     this._onDataChanged = () => this.loadData();
     appState.addEventListener('data-changed', this._onDataChanged);
     this._localeHandler = () => this.init();
@@ -146,15 +145,8 @@ export class HomeView {
 
   async loadData() {
     const [allDemos, allProjects] = await Promise.all([getAllDemos(), getAllProjects()]);
-    this.demos = allDemos.slice(0, 8);
-    this.projects = allProjects.slice(0, 4);
-    // Build a demo count map per project
-    this._projectDemoCount = new Map();
-    for (const d of allDemos) {
-      if (d.projectId) {
-        this._projectDemoCount.set(d.projectId, (this._projectDemoCount.get(d.projectId) || 0) + 1);
-      }
-    }
+    this.demos = allDemos;
+    this._projectsMap = new Map(allProjects.map((p) => [p.id, p]));
     this.render();
   }
 
@@ -179,10 +171,7 @@ export class HomeView {
   }
 
   render() {
-    const projectsMap = new Map(this.projects.map((p) => [p.id, p]));
-    // Use full projects from demos too — build a broader map
-    // (projects slice is only 4 but demos may reference others; we only have the top 4 here,
-    //  which is fine for badge display)
+    const projectsMap = this._projectsMap || new Map();
     const isEmpty = this.demos.length === 0;
 
     this.container.innerHTML = `
@@ -225,33 +214,19 @@ export class HomeView {
           isEmpty
             ? this._renderEmptyState()
             : `
-          <!-- Recent demos -->
-          <section class="mb-10">
+          <!-- All demos, sorted by recent -->
+          <section>
             <div class="flex items-center justify-between mb-4">
-              <h2 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">${t('home.recent_demos')}</h2>
-              <a href="#/demos" class="text-xs text-[var(--color-accent)] hover:underline">查看全部</a>
+              <h2 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">
+                ${t('home.recent_demos')}
+                <span class="ml-1.5 font-normal normal-case text-[var(--color-text-tertiary)]">(${this.demos.length})</span>
+              </h2>
+              <a href="#/demos" class="text-xs text-[var(--color-accent)] hover:underline">${t('demos.title')} →</a>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" id="recent-demos-grid">
               ${this.demos.map((d) => renderDemoCard(d, projectsMap)).join('')}
             </div>
           </section>
-
-          ${
-            this.projects.length > 0
-              ? `
-          <!-- Projects section -->
-          <section>
-            <div class="flex items-center justify-between mb-4">
-              <h2 class="text-sm font-semibold text-[var(--color-text-secondary)] uppercase tracking-wider">${t('home.recent_projects')}</h2>
-              <a href="#/demos/new" class="text-xs text-[var(--color-accent)] hover:underline">新建项目</a>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              ${this.projects.map((p) => this._renderProjectCard(p)).join('')}
-            </div>
-          </section>
-          `
-              : ''
-          }
         `
         }
 
@@ -276,26 +251,6 @@ export class HomeView {
           ${t('home.empty.cta')}
         </a>
       </div>
-    `;
-  }
-
-  _renderProjectCard(project) {
-    const demoCount = this._projectDemoCount?.get(project.id) || 0;
-    return `
-      <a href="#/projects/${escapeHtml(project.id)}"
-         class="block rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4 hover:border-[var(--color-accent)]/50 hover:shadow-md transition-all duration-200">
-        <div class="flex items-start gap-3">
-          <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-[var(--color-bg-tertiary)]">
-            ${icon('folder', 'w-4 h-4 text-[var(--color-accent)]')}
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold text-[var(--color-text-primary)] truncate">${escapeHtml(project.title)}</p>
-            <p class="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">
-              ${t('home.demos_count', { n: demoCount })} · ${formatRelative(project.updatedAt)}
-            </p>
-          </div>
-        </div>
-      </a>
     `;
   }
 
@@ -329,7 +284,6 @@ export class HomeView {
         const demo = await createDemo({
           title: _quickTitle,
           notes: '',
-          tags: [],
           entryFile: 'index.html',
           files: [{ name: 'index.html', content: html, mimeType: 'text/html' }],
           projectId: null,

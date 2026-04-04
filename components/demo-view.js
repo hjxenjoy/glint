@@ -12,7 +12,6 @@ import { buildSrcdoc, resolveFileSet } from 'utils/file-resolver.js';
 import { formatBytes } from 'utils/base64.js';
 import { formatFull } from 'utils/date.js';
 import { PreviewPanel } from 'components/preview-panel.js';
-import { TagInput } from 'components/tag-input.js';
 import { confirm } from 'components/modal.js';
 import { toast } from 'components/toast.js';
 import { t } from 'utils/i18n.js';
@@ -388,12 +387,6 @@ export class DemoView {
                       placeholder="${t('editor.notes.placeholder')}"
                       rows="4"
             >${escapeHtml(demo.notes || '')}</textarea>
-          </div>
-
-          <!-- Tags -->
-          <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-semibold text-[var(--color-text-secondary)] uppercase tracking-wide">${t('editor.tags')}</label>
-            <div id="info-tag-input-container"></div>
           </div>
 
           <!-- Project assignment -->
@@ -837,27 +830,6 @@ export class DemoView {
       notesEl.style.height = 'auto';
       notesEl.style.height = notesEl.scrollHeight + 'px';
     });
-
-    // Tags
-    const tagContainer = body.querySelector('#info-tag-input-container');
-    if (tagContainer) {
-      if (this._tagInput) {
-        this._tagInput.destroy();
-        this._tagInput = null;
-      }
-      this._tagInput = new TagInput(tagContainer, {
-        value: this.demo.tags || [],
-        onChange: async (tags) => {
-          try {
-            this.demo = await updateDemo(this.demo.id, { tags });
-            appState.notifyDataChanged('demo');
-          } catch (err) {
-            console.error('Save tags error:', err);
-            toast.error(t('common.error'));
-          }
-        },
-      });
-    }
 
     // Project assignment — save on change
     const projectSelect = body.querySelector('#info-project');
