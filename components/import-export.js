@@ -191,46 +191,107 @@ export class SettingsView {
   // ─── Tab: About ──────────────────────────────────────────────────────────
 
   renderAboutTab() {
+    const featureItem = (text) => `
+      <li class="flex items-start gap-1.5 text-sm text-[var(--color-text-secondary)]">
+        <span class="text-[var(--color-accent)] mt-0.5 shrink-0">${icon('check', 'w-3.5 h-3.5')}</span>
+        ${text}
+      </li>`;
+
+    const section = (iconName, title, items) => `
+      <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
+        <div class="flex items-center gap-2 mb-3">
+          <span class="text-[var(--color-accent)]">${icon(iconName, 'w-4 h-4')}</span>
+          <h4 class="text-sm font-semibold text-[var(--color-text-primary)]">${title}</h4>
+        </div>
+        <ul class="space-y-1.5">${items.map(featureItem).join('')}</ul>
+      </div>`;
+
     return `
-      <div class="card p-6">
-        <div class="flex items-center gap-3 mb-4">
-          <span class="text-[var(--color-accent)]">${icon('sparkle', 'w-8 h-8')}</span>
-          <div>
+      <div class="space-y-6">
+        <!-- Header -->
+        <div class="card p-6 flex items-center gap-4">
+          <span class="text-[var(--color-accent)]">${icon('sparkle', 'w-10 h-10')}</span>
+          <div class="flex-1">
             <h2 class="text-xl font-bold text-[var(--color-text-primary)]">Glint</h2>
-            <span class="text-xs text-[var(--color-text-tertiary)]">${t('settings.about.version')} v1.0.0</span>
+            <p class="text-xs text-[var(--color-text-tertiary)] mt-0.5">${t('settings.about.version')} v1.0.0 · 纯浏览器应用，零服务端依赖</p>
           </div>
         </div>
-        <p class="text-sm text-[var(--color-text-secondary)] mb-6">
-          ${t('settings.about.description')}
-        </p>
 
-        <div class="mb-6">
-          <h4 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">${t('settings.about.tech_stack')}</h4>
-          <ul class="space-y-1.5 text-sm text-[var(--color-text-secondary)]">
-            <li class="flex items-center gap-2">
-              <span class="text-[var(--color-accent)]">${icon('check', 'w-3.5 h-3.5')}</span>
-              Vanilla JS (ES2022+)
-            </li>
-            <li class="flex items-center gap-2">
-              <span class="text-[var(--color-accent)]">${icon('check', 'w-3.5 h-3.5')}</span>
-              IndexedDB
-            </li>
-            <li class="flex items-center gap-2">
-              <span class="text-[var(--color-accent)]">${icon('check', 'w-3.5 h-3.5')}</span>
-              Service Worker
-            </li>
-            <li class="flex items-center gap-2">
-              <span class="text-[var(--color-accent)]">${icon('check', 'w-3.5 h-3.5')}</span>
-              Tailwind CSS
-            </li>
-          </ul>
+        <!-- Feature grid -->
+        <div>
+          <h3 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">功能一览</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+            ${section('file-code', 'Demo 管理', [
+              '粘贴 HTML 代码快速创建（自动提取 &lt;title&gt;）',
+              '拖拽单个或多个 .html 文件批量创建',
+              '拖拽混合文件（html + css + 图片）打包为多文件 Demo',
+              '上传文件 / 上传文件夹（自动识别入口文件）',
+              '克隆 Demo，一键生成副本（含所有资源）',
+              '导出为独立 HTML 文件（所有资源内联，可直接分享）',
+              '删除 Demo',
+            ])}
+
+            ${section('arrows-out', '预览与编辑', [
+              '沙箱 iframe 预览（null origin，无法访问父页面数据）',
+              '4 种设备视口预设：手机 / 平板 / 笔记本 / 桌面',
+              '可拖拽调整预览区大小（右/下/右下三个手柄）',
+              '代码编辑器：行号显示 + Tab 键缩进（2 空格）',
+              '文件管理标签：上传 / 删除文本文件和图片资源',
+              '信息标签：备注编辑、归属项目切换',
+            ])}
+
+            ${section('folder-open', '项目与组织', [
+              '创建 / 重命名 / 删除项目（删除后 Demo 变为独立状态）',
+              '项目描述点击即编辑（自动保存）',
+              'Demo 可归属项目或保持独立（未分组）',
+              '一键将整个项目导出为 ZIP',
+              '侧边栏项目树，始终展开展示所有 Demo（A-Z 排序）',
+            ])}
+
+            ${section('magnifying-glass', '搜索与导航', [
+              '全局搜索（/ 键唤起），支持标题 / 备注全文匹配',
+              '全部 Demo 视图：关键词搜索、排序（更新/创建/名称）',
+              '按项目分组切换视图',
+              '首页展示全部最近 Demo，快速回到上次工作',
+            ])}
+
+            ${section('upload-simple', '导入 / 导出', [
+              '全量导出为 JSON（可读格式）或 ZIP（含原始文件）',
+              '导入 JSON / ZIP，冲突时展示具体冲突项名称',
+              '冲突处理策略：跳过 / 覆盖 / 全部作为新记录',
+              '项目级导出：仅打包指定项目的所有 Demo',
+            ])}
+
+            ${section('sparkle', '系统与体验', [
+              '主题：亮色 / 暗色 / 跟随系统（防 FOUC 处理）',
+              '中文 / 英文界面实时切换',
+              'PWA 支持，Service Worker 离线缓存全部静态资源',
+              '存储用量实时显示，首次使用申请持久化存储',
+              '纯浏览器运行，零服务端，数据全部存于本地 IndexedDB',
+            ])}
+
+          </div>
         </div>
 
-        <div>
-          <a href="#" class="btn btn-secondary gap-2 inline-flex">
-            ${icon('arrow-square-out', 'w-4 h-4')}
-            GitHub
-          </a>
+        <!-- Tech stack -->
+        <div class="card p-4">
+          <h4 class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider mb-3">${t('settings.about.tech_stack')}</h4>
+          <div class="flex flex-wrap gap-2">
+            ${[
+              'Vanilla JS (ES2022+)',
+              'IndexedDB',
+              'Service Worker',
+              'Tailwind CSS v4',
+              'fflate (ZIP)',
+              'Phosphor Icons',
+            ]
+              .map(
+                (s) =>
+                  `<span class="px-2.5 py-1 rounded-full text-xs bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] border border-[var(--color-border)]">${s}</span>`
+              )
+              .join('')}
+          </div>
         </div>
       </div>
     `;
