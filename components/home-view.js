@@ -1,7 +1,8 @@
 import { appState } from 'store/app-state.js';
 import { getAllDemos, deleteDemo, createDemo, cloneDemo } from 'db/demos.js';
 import { getAllProjects } from 'db/projects.js';
-import { deleteAssetsByDemo, cloneAssetsByDemo } from 'db/assets.js';
+import { deleteAssetsByDemo, cloneAssetsByDemo, saveAsset } from 'db/assets.js';
+import { resolveFileSet } from 'utils/file-resolver.js';
 import { formatRelative } from 'utils/date.js';
 import { confirm } from 'components/modal.js';
 import { toast } from 'components/toast.js';
@@ -175,7 +176,15 @@ export class HomeView {
     const isEmpty = this.demos.length === 0;
 
     this.container.innerHTML = `
-      <div class="p-6 max-w-7xl mx-auto">
+      <div class="relative p-6 max-w-7xl mx-auto">
+
+        <!-- Drop overlay -->
+        <div id="drop-overlay"
+             class="hidden absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-[var(--color-accent)] bg-[var(--color-bg-primary)]/90 backdrop-blur-sm pointer-events-none gap-3">
+          ${icon('upload-simple', 'w-12 h-12 text-[var(--color-accent)]')}
+          <p class="text-lg font-semibold text-[var(--color-text-primary)]">松开即创建 Demo</p>
+          <p class="text-sm text-[var(--color-text-tertiary)]">单个或多个 .html 文件，混合文件自动打包</p>
+        </div>
 
         <!-- Page header -->
         <div class="flex items-start justify-between mb-8 gap-4">
@@ -351,6 +360,101 @@ export class HomeView {
     // Edit button click — stop propagation so card click doesn't also fire
     this.container.querySelectorAll('[data-action="edit"]').forEach((btn) => {
       btn.addEventListener('click', (e) => e.stopPropagation());
+    });
+
+    this._bindDragDrop();
+  }
+
+  _bindDragDrop() {
+    let dragCounter = 0;
+    const overlay = this.container.querySelector('#drop-overlay');
+    const showOverlay = () => overlay?.classList.remove('hidden');
+    const hideOverlay = () => overlay?.classList.add('hidden');
+
+    this.container.addEventListener('dragenter', (e) => {
+      if (!e.dataTransfer?.types.includes('Files')) return;
+      e.preventDefault();
+      dragCounter++;
+      if (dragCounter === 1) showOverlay();
+    });
+
+    this.container.addEventListener('dragover', (e) => {
+      if (!e.dataTransfer?.types.includes('Files')) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+    });
+
+    this.container.addEventListener('dragleave', () => {
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dragCounter = 0;
+        hideOverlay();
+      }
+    });
+
+    this.container.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      hideOverlay();
+      const files = [...(e.dataTransfer?.files || [])];
+      if (files.length > 0) await this._handleFileDrop(files);
+    });
+  }
+
+  async _handleFileDrop(files) {
+    const htmlFiles = files.filter((f) => /\.html?$/i.test(f.name));
+    const isAllHtml = htmlFiles.length === files.length;
+
+    if (htmlFiles.length === 0) {
+      toast.error('请拖入 HTML 文件');
+      return;
+    }
+
+    if (isAllHtml) {
+      // Each HTML file → one separate demo
+      const toastMsg =
+        files.length > 1 ? `正在创建 ${files.length} 个 Demo...` : '正在创建 Demo...';
+      const tid = toast.info(toastMsg);
+      try {
+        await Promise.all(files.map((f) => this._createDemoFromHtmlFile(f)));
+        appState.notifyDataChanged('demos');
+        toast.success(files.length > 1 ? `已创建 ${files.length} 个 Demo` : 'Demo 已创建');
+      } catch (err) {
+        console.error('Drop create error:', err);
+        toast.error('创建失败，请重试');
+      }
+    } else {
+      // Mixed files (html + css/images) → one multi-file demo
+      try {
+        const resolved = await resolveFileSet(files);
+        const entryContent =
+          resolved.files.find((f) => f.name === resolved.entryFile)?.content || '';
+        const title =
+          extractHtmlTitle(entryContent) ||
+          resolved.entryFile.replace(/\.html?$/i, '') ||
+          '拖入的 Demo';
+        const demo = await createDemo({
+          title,
+          entryFile: resolved.entryFile,
+          files: resolved.files,
+        });
+        await Promise.all(resolved.assets.map((a) => saveAsset({ demoId: demo.id, ...a })));
+        appState.notifyDataChanged('demos');
+        appState.navigate(`#/demos/${demo.id}`);
+      } catch (err) {
+        console.error('Drop multi-file error:', err);
+        toast.error('创建失败：' + (err.message || '未知错误'));
+      }
+    }
+  }
+
+  async _createDemoFromHtmlFile(file) {
+    const content = await file.text();
+    const title = extractHtmlTitle(content) || file.name.replace(/\.html?$/i, '');
+    return createDemo({
+      title,
+      entryFile: file.name,
+      files: [{ name: file.name, content, mimeType: 'text/html' }],
     });
   }
 }
