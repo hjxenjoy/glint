@@ -132,6 +132,7 @@ export class HomeView {
     this._localeHandler = () => this.init();
     window.addEventListener('locale-change', this._localeHandler);
     this.init();
+    this._bindDragDrop(); // bound once; listeners live on container across re-renders
   }
 
   destroy() {
@@ -367,15 +368,15 @@ export class HomeView {
     this.container.querySelectorAll('[data-action="edit"]').forEach((btn) => {
       btn.addEventListener('click', (e) => e.stopPropagation());
     });
-
-    this._bindDragDrop();
   }
 
   _bindDragDrop() {
     let dragCounter = 0;
-    const overlay = this.container.querySelector('#drop-overlay');
-    const showOverlay = () => overlay?.classList.remove('hidden');
-    const hideOverlay = () => overlay?.classList.add('hidden');
+    // Look up overlay dynamically — innerHTML is replaced on each render
+    const showOverlay = () =>
+      this.container.querySelector('#drop-overlay')?.classList.remove('hidden');
+    const hideOverlay = () =>
+      this.container.querySelector('#drop-overlay')?.classList.add('hidden');
 
     this.container.addEventListener('dragenter', (e) => {
       if (!e.dataTransfer?.types.includes('Files')) return;
