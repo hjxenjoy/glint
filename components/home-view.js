@@ -1,5 +1,5 @@
 import { appState } from 'store/app-state.js';
-import { getAllDemos, deleteDemo } from 'db/demos.js';
+import { getAllDemos, deleteDemo, createDemo } from 'db/demos.js';
 import { getAllProjects } from 'db/projects.js';
 import { deleteAssetsByDemo } from 'db/assets.js';
 import { formatRelative } from 'utils/date.js';
@@ -7,6 +7,11 @@ import { confirm } from 'components/modal.js';
 import { toast } from 'components/toast.js';
 import { t } from 'utils/i18n.js';
 import { icon } from 'utils/icons.js';
+
+function extractHtmlTitle(html) {
+  const match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  return match ? match[1].trim() : '';
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -193,6 +198,27 @@ export class HomeView {
           </a>
         </div>
 
+        <!-- Quick Paste -->
+        <section class="mb-8">
+          <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
+            <div class="flex items-center gap-2 mb-3">
+              ${icon('code', 'w-4 h-4 text-[var(--color-accent)]')}
+              <span class="text-sm font-medium text-[var(--color-text-primary)]">粘贴 HTML，快速创建 Demo</span>
+            </div>
+            <textarea id="quick-paste-input"
+                      class="w-full h-24 font-mono text-xs bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border)] outline-none focus:border-[var(--color-accent)] p-3 resize-none transition-colors text-[var(--color-text-secondary)] placeholder:text-[var(--color-text-tertiary)]"
+                      placeholder="粘贴 HTML 代码...（自动提取 <title> 作为名称）"
+                      spellcheck="false"></textarea>
+            <div id="quick-paste-actions" class="hidden mt-2 flex items-center gap-3">
+              <button id="quick-create-btn" class="btn btn-primary btn-sm gap-1.5">
+                ${icon('plus', 'w-3.5 h-3.5')}
+                立即创建
+              </button>
+              <span id="quick-title-preview" class="text-xs text-[var(--color-text-tertiary)] truncate"></span>
+            </div>
+          </div>
+        </section>
+
         ${
           isEmpty
             ? this._renderEmptyState()
@@ -272,6 +298,49 @@ export class HomeView {
   }
 
   _bindEvents() {
+    // Quick paste widget
+    const quickInput = this.container.querySelector('#quick-paste-input');
+    const quickActions = this.container.querySelector('#quick-paste-actions');
+    const quickCreateBtn = this.container.querySelector('#quick-create-btn');
+    const quickTitlePreview = this.container.querySelector('#quick-title-preview');
+    let _quickTitle = '';
+
+    quickInput?.addEventListener('input', () => {
+      const html = quickInput.value.trim();
+      if (html) {
+        quickActions.classList.remove('hidden');
+        _quickTitle =
+          extractHtmlTitle(html) ||
+          `未命名 Demo ${new Date().toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
+        quickTitlePreview.textContent = `"${_quickTitle}"`;
+      } else {
+        quickActions.classList.add('hidden');
+      }
+    });
+
+    quickCreateBtn?.addEventListener('click', async () => {
+      const html = quickInput.value.trim();
+      if (!html) return;
+      quickCreateBtn.disabled = true;
+      quickCreateBtn.textContent = '创建中...';
+      try {
+        const demo = await createDemo({
+          title: _quickTitle,
+          notes: '',
+          tags: [],
+          entryFile: 'index.html',
+          files: [{ name: 'index.html', content: html, mimeType: 'text/html' }],
+          projectId: null,
+        });
+        appState.notifyDataChanged('demos');
+        appState.navigate(`#/demos/${demo.id}`);
+      } catch (err) {
+        toast.error('创建失败: ' + err.message);
+        quickCreateBtn.disabled = false;
+        quickCreateBtn.textContent = '立即创建';
+      }
+    });
+
     // Navigate to demo on card click (excluding action buttons)
     this.container.querySelectorAll('.demo-card').forEach((card) => {
       card.addEventListener('click', (e) => {

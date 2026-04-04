@@ -15,6 +15,12 @@ import { icon } from 'utils/icons.js';
 // Shared helpers
 // ---------------------------------------------------------------------------
 
+/** Extract the <title> content from an HTML string */
+function extractHtmlTitle(html) {
+  const match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  return match ? match[1].trim() : '';
+}
+
 function escapeHtml(str) {
   return String(str || '')
     .replace(/&/g, '&amp;')
@@ -859,9 +865,12 @@ export class NewDemoView {
       this.entryFile = result.entryFile;
       this.method = 'upload';
 
-      // Pre-fill title from entry file name (strip extension)
+      // Pre-fill title: try <title> tag first, then filename
       const htmlFile = result.files.find((f) => f.name === result.entryFile);
-      if (htmlFile) {
+      const fromTitle = htmlFile ? extractHtmlTitle(htmlFile.content) : '';
+      if (fromTitle) {
+        this.title = fromTitle;
+      } else if (htmlFile) {
         this.title = htmlFile.name.replace(/\.[^.]+$/, '');
       } else if (result.files.length > 0) {
         this.title = result.files[0].name.replace(/\.[^.]+$/, '');
@@ -971,9 +980,10 @@ export class NewDemoView {
             <!-- Title -->
             <div class="space-y-1.5">
               <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="new-title">
-                ${t('new_demo.title_label')} <span class="text-red-500">*</span>
+                ${t('new_demo.title_label')}
+                <span class="text-xs font-normal text-[var(--color-text-tertiary)] ml-1">（可选，自动提取或留空）</span>
               </label>
-              <input type="text" id="new-title" class="input w-full" value="${escapeHtml(this.title)}" placeholder="${escapeHtml(t('new_demo.title_placeholder'))}" required>
+              <input type="text" id="new-title" class="input w-full" value="${escapeHtml(this.title)}" placeholder="${escapeHtml(t('new_demo.title_placeholder'))}">
             </div>
 
             <!-- Notes -->
@@ -1052,6 +1062,7 @@ export class NewDemoView {
 
     titleEl?.addEventListener('input', () => {
       this.title = titleEl.value;
+      this._titleManuallyEdited = true;
     });
     notesEl?.addEventListener('input', () => {
       this.notes = notesEl.value;
@@ -1066,9 +1077,16 @@ export class NewDemoView {
 
     if (pasteEl) {
       pasteEl.addEventListener('input', () => {
-        // Keep in-memory for preview
         this._pastedHtml = pasteEl.value;
         this.updatePreview();
+        // Auto-extract title from <title> tag if user hasn't manually set it
+        if (!this._titleManuallyEdited) {
+          const extracted = extractHtmlTitle(pasteEl.value);
+          if (extracted && titleEl) {
+            this.title = extracted;
+            titleEl.value = extracted;
+          }
+        }
       });
     }
 
@@ -1115,13 +1133,10 @@ export class NewDemoView {
 
   async create() {
     const titleEl = this.container.querySelector('#new-title');
-    const title = (titleEl?.value || this.title || '').trim();
-
-    if (!title) {
-      toast.error(t('new_demo.validation.title'));
-      titleEl?.focus();
-      return;
-    }
+    // Title is optional — fall back to a timestamped default
+    const title =
+      (titleEl?.value || this.title || '').trim() ||
+      `未命名 Demo ${new Date().toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`;
 
     let filesToSave = [...this.files];
     let assetsToSave = [...this.assets];
