@@ -40,25 +40,37 @@ function parseHash() {
   // Route matching
   if (segments.length === 0) {
     appState.set('currentView', 'home');
+    appState.set('selectedDemoId', null);
+    appState.set('selectedProjectId', null);
   } else if (segments[0] === 'demos' && !segments[1]) {
     appState.set('currentView', 'all-demos');
+    appState.set('selectedDemoId', null);
+    appState.set('selectedProjectId', null);
   } else if (segments[0] === 'demos' && segments[1] === 'new') {
     appState.set('currentView', 'new-demo');
+    appState.set('selectedDemoId', null);
     appState.set('selectedProjectId', params.projectId || null);
   } else if (segments[0] === 'demos' && segments[2] === 'edit') {
     appState.set('currentView', 'demo-edit');
     appState.set('selectedDemoId', segments[1]);
+    appState.set('selectedProjectId', null);
   } else if (segments[0] === 'demos' && segments[1]) {
     appState.set('currentView', 'demo-preview');
     appState.set('selectedDemoId', segments[1]);
+    appState.set('selectedProjectId', null);
   } else if (segments[0] === 'projects' && segments[1]) {
     appState.set('currentView', 'project');
     appState.set('selectedProjectId', segments[1]);
+    appState.set('selectedDemoId', null);
   } else if (segments[0] === 'search') {
     appState.set('currentView', 'search');
+    appState.set('selectedDemoId', null);
+    appState.set('selectedProjectId', null);
     appState.set('searchQuery', params.q || '');
   } else if (segments[0] === 'settings') {
     appState.set('currentView', 'settings');
+    appState.set('selectedDemoId', null);
+    appState.set('selectedProjectId', null);
   }
 }
 

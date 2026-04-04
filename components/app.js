@@ -63,6 +63,16 @@ class App {
       if (e.detail.key === 'currentView') {
         await this.renderView(e.detail.value);
       }
+      // Re-render when switching between demos/projects while the view type stays the same
+      if (
+        e.detail.key === 'selectedDemoId' &&
+        ['demo-preview', 'demo-edit'].includes(appState.get('currentView'))
+      ) {
+        await this.renderView(appState.get('currentView'));
+      }
+      if (e.detail.key === 'selectedProjectId' && appState.get('currentView') === 'project') {
+        await this.renderView('project');
+      }
       if (e.detail.key === 'sidebarOpen') {
         this.updateSidebarState(e.detail.value);
       }

@@ -201,9 +201,15 @@ export class HomeView {
         <!-- Quick Paste -->
         <section class="mb-8">
           <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4">
-            <div class="flex items-center gap-2 mb-3">
-              ${icon('code', 'w-4 h-4 text-[var(--color-accent)]')}
-              <span class="text-sm font-medium text-[var(--color-text-primary)]">粘贴 HTML，快速创建 Demo</span>
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <div class="flex items-center gap-2">
+                ${icon('code', 'w-4 h-4 text-[var(--color-accent)]')}
+                <span class="text-sm font-medium text-[var(--color-text-primary)]">粘贴 HTML，快速创建 Demo</span>
+              </div>
+              <span class="text-xs text-[var(--color-text-tertiary)] flex items-center gap-1">
+                ${icon('upload-simple', 'w-3.5 h-3.5')}
+                或将 .html 文件拖拽到页面任意位置
+              </span>
             </div>
             <textarea id="quick-paste-input"
                       class="w-full h-24 font-mono text-xs bg-[var(--color-bg-tertiary)] rounded-lg border border-[var(--color-border)] outline-none focus:border-[var(--color-accent)] p-3 resize-none transition-colors text-[var(--color-text-secondary)] placeholder:text-[var(--color-text-tertiary)]"
