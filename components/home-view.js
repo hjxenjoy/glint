@@ -25,29 +25,37 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
-function demoGradient(id) {
-  const hue = parseInt(id.slice(0, 8), 16) % 360;
-  return `linear-gradient(135deg, hsl(${hue}, 70%, 60%), hsl(${(hue + 60) % 360}, 70%, 50%))`;
+/**
+ * Render a code-preview thumbnail for a demo card.
+ * Shows the first lines of the entry HTML file in a dark code block.
+ */
+function renderCodeThumb(demo) {
+  const entry =
+    (demo.files || []).find((f) => f.name === (demo.entryFile || 'index.html')) || demo.files?.[0];
+
+  if (!entry) {
+    return `
+      <div class="h-36 w-full bg-[var(--color-bg-tertiary)] flex items-center justify-center">
+        ${icon('file-code', 'w-8 h-8 text-[var(--color-text-tertiary)] opacity-30')}
+      </div>`;
+  }
+
+  // First 18 lines, each truncated to 72 chars
+  const preview = entry.content
+    .split('\n')
+    .slice(0, 18)
+    .map((l) => l.slice(0, 72))
+    .join('\n');
+
+  return `
+    <div class="h-36 w-full overflow-hidden bg-[#13151e] relative select-none">
+      <pre class="text-[8.5px] leading-[1.5] font-mono p-2.5 text-[#8b9fc8] pointer-events-none whitespace-pre overflow-hidden">${escapeHtml(preview)}</pre>
+      <div class="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#13151e] to-transparent pointer-events-none"></div>
+    </div>`;
 }
 
 function renderDemoCard(demo, projectsMap) {
   const project = demo.projectId ? projectsMap.get(demo.projectId) : null;
-  const tags = demo.tags || [];
-  const visibleTags = tags.slice(0, 3);
-  const extraTags = tags.length - visibleTags.length;
-  const gradient = demoGradient(demo.id);
-
-  const tagBadges = visibleTags
-    .map(
-      (tag) =>
-        `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] truncate max-w-[80px]">${escapeHtml(tag)}</span>`
-    )
-    .join('');
-
-  const extraBadge =
-    extraTags > 0
-      ? `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)]">+${extraTags}</span>`
-      : '';
 
   const projectBadge = project
     ? `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-[var(--color-accent)]/15 text-[var(--color-accent)] truncate max-w-[100px]">${escapeHtml(project.title)}</span>`
@@ -56,40 +64,28 @@ function renderDemoCard(demo, projectsMap) {
   return `
     <div class="demo-card group relative rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] overflow-hidden cursor-pointer hover:border-[var(--color-accent)]/50 hover:shadow-lg transition-all duration-200"
          data-demo-id="${escapeHtml(demo.id)}">
-      <!-- Thumbnail -->
-      <div class="h-36 w-full" style="background:${gradient}"></div>
+      <!-- Code thumbnail -->
+      ${renderCodeThumb(demo)}
 
       <!-- Card body -->
       <div class="p-3">
-        <!-- Project badge -->
         ${projectBadge ? `<div class="mb-1.5">${projectBadge}</div>` : ''}
-
-        <!-- Title -->
-        <p class="text-sm font-semibold text-[var(--color-text-primary)] truncate leading-snug mb-1.5">
+        <p class="text-sm font-semibold text-[var(--color-text-primary)] truncate leading-snug mb-1">
           ${escapeHtml(demo.title)}
         </p>
-
-        <!-- Tags -->
-        ${
-          tags.length > 0
-            ? `<div class="flex flex-wrap gap-1 mb-2">${tagBadges}${extraBadge}</div>`
-            : ''
-        }
-
-        <!-- Updated time -->
         <p class="text-[11px] text-[var(--color-text-tertiary)]">${formatRelative(demo.updatedAt)}</p>
       </div>
 
       <!-- Hover action buttons -->
       <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
         <a href="#/demos/${escapeHtml(demo.id)}/edit"
-           class="btn btn-icon w-7 h-7 bg-[var(--color-bg-primary)]/90 backdrop-blur-sm border border-[var(--color-border)] hover:border-[var(--color-accent)] shadow-sm"
+           class="btn btn-icon w-7 h-7 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-[var(--color-accent)] text-white shadow-sm"
            title="${t('demo.edit')}"
            data-action="edit"
            data-demo-id="${escapeHtml(demo.id)}">
           ${icon('pencil-simple', 'w-3.5 h-3.5')}
         </a>
-        <button class="btn btn-icon w-7 h-7 bg-[var(--color-bg-primary)]/90 backdrop-blur-sm border border-[var(--color-border)] hover:border-red-400 hover:text-red-400 shadow-sm"
+        <button class="btn btn-icon w-7 h-7 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-red-400 hover:text-red-400 text-white shadow-sm"
                 title="${t('demo.delete')}"
                 data-action="delete"
                 data-demo-id="${escapeHtml(demo.id)}">

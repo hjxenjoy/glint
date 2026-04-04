@@ -171,34 +171,49 @@ export class ProjectView {
   }
 
   renderDemoCard(demo) {
+    const entry =
+      (demo.files || []).find((f) => f.name === (demo.entryFile || 'index.html')) ||
+      demo.files?.[0];
+    const codePreview = entry
+      ? entry.content
+          .split('\n')
+          .slice(0, 18)
+          .map((l) => l.slice(0, 72))
+          .join('\n')
+      : null;
+
     return `
       <div class="demo-card group relative flex flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-secondary)] hover:border-[var(--color-accent)] hover:shadow-md transition-all duration-200 overflow-hidden"
            data-demo-id="${escapeHtml(demo.id)}">
-        <a href="#/demos/${escapeHtml(demo.id)}" class="flex-1 p-4 block">
-          <div class="flex items-start gap-2 mb-2">
-            ${icon('file-code', 'w-4 h-4 mt-0.5 shrink-0 text-[var(--color-accent)]')}
-            <h3 class="text-sm font-semibold text-[var(--color-text-primary)] leading-snug line-clamp-2 flex-1">${escapeHtml(demo.title)}</h3>
-          </div>
-          ${demo.notes ? `<p class="text-xs text-[var(--color-text-tertiary)] line-clamp-2 mb-2 leading-relaxed">${escapeHtml(demo.notes)}</p>` : ''}
+        <!-- Code thumbnail -->
+        <a href="#/demos/${escapeHtml(demo.id)}" class="block overflow-hidden relative h-28 bg-[#13151e] select-none">
+          ${
+            codePreview
+              ? `<pre class="text-[8px] leading-[1.5] font-mono p-2 text-[#8b9fc8] pointer-events-none whitespace-pre overflow-hidden">${escapeHtml(codePreview)}</pre>
+                 <div class="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#13151e] to-transparent"></div>`
+              : `<div class="h-full flex items-center justify-center">${icon('file-code', 'w-7 h-7 text-[#8b9fc8] opacity-30')}</div>`
+          }
         </a>
 
-        <div class="flex items-center justify-between px-4 py-2.5 border-t border-[var(--color-border)] bg-[var(--color-bg-tertiary)]">
-          <span class="text-[10px] text-[var(--color-text-tertiary)]" title="${formatFull(demo.updatedAt)}">
-            ${formatRelative(demo.updatedAt)}
-          </span>
-          <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <a href="#/demos/${escapeHtml(demo.id)}/edit"
-               class="btn btn-icon btn-ghost w-6 h-6"
-               title="${t('demo.edit')}">
-              ${icon('pencil-simple', 'w-3.5 h-3.5')}
-            </a>
-            <button class="btn btn-icon btn-ghost w-6 h-6 hover:text-[var(--color-danger)] demo-delete-btn"
-                    data-demo-id="${escapeHtml(demo.id)}"
-                    data-demo-title="${escapeHtml(demo.title)}"
-                    title="${t('demo.delete')}">
-              ${icon('trash', 'w-3.5 h-3.5')}
-            </button>
-          </div>
+        <!-- Card body -->
+        <a href="#/demos/${escapeHtml(demo.id)}" class="flex-1 p-3 block">
+          <h3 class="text-sm font-semibold text-[var(--color-text-primary)] leading-snug truncate">${escapeHtml(demo.title)}</h3>
+          <p class="text-[11px] text-[var(--color-text-tertiary)] mt-0.5">${formatRelative(demo.updatedAt)}</p>
+        </a>
+
+        <!-- Hover actions -->
+        <div class="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <a href="#/demos/${escapeHtml(demo.id)}/edit"
+             class="btn btn-icon w-6 h-6 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-[var(--color-accent)] text-white"
+             title="${t('demo.edit')}">
+            ${icon('pencil-simple', 'w-3 h-3')}
+          </a>
+          <button class="btn btn-icon w-6 h-6 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-red-400 hover:text-red-400 text-white demo-delete-btn"
+                  data-demo-id="${escapeHtml(demo.id)}"
+                  data-demo-title="${escapeHtml(demo.title)}"
+                  title="${t('demo.delete')}">
+            ${icon('trash', 'w-3 h-3')}
+          </button>
         </div>
       </div>
     `;
