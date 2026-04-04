@@ -226,11 +226,16 @@ export class DemoView {
               </button>
             </div>
           </div>
-          <textarea id="code-editor"
-                    class="flex-1 w-full p-4 font-mono text-sm bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] resize-none outline-none leading-relaxed"
-                    spellcheck="false"
-                    wrap="off"
-          >${current ? escapeHtml(current.content) : ''}</textarea>
+          <div class="flex-1 flex overflow-hidden font-mono text-sm leading-relaxed">
+            <div id="line-numbers"
+                 class="shrink-0 w-10 py-4 text-right select-none overflow-hidden bg-[var(--color-bg-secondary)] border-r border-[var(--color-border)] text-[var(--color-text-tertiary)] text-[11px] leading-relaxed pr-2"
+                 aria-hidden="true"></div>
+            <textarea id="code-editor"
+                      class="flex-1 px-4 py-4 bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] resize-none outline-none leading-relaxed"
+                      spellcheck="false"
+                      wrap="off"
+            >${current ? escapeHtml(current.content) : ''}</textarea>
+          </div>
         </div>
       </div>
     `;
@@ -530,11 +535,39 @@ export class DemoView {
     });
 
     const textarea = this.container.querySelector('#code-editor');
+    const lineNumbers = this.container.querySelector('#line-numbers');
+
+    const updateLineNumbers = () => {
+      if (!lineNumbers || !textarea) return;
+      const count = textarea.value.split('\n').length;
+      lineNumbers.innerHTML = Array.from({ length: count }, (_, i) => `<div>${i + 1}</div>`).join(
+        ''
+      );
+      lineNumbers.scrollTop = textarea.scrollTop;
+    };
+    updateLineNumbers();
+
     textarea?.addEventListener('input', () => {
+      updateLineNumbers();
       if (!this._unsaved) {
         this._unsaved = true;
         const indicator = this.container.querySelector('#unsaved-indicator');
         if (indicator) indicator.classList.remove('hidden');
+      }
+    });
+
+    textarea?.addEventListener('scroll', () => {
+      if (lineNumbers) lineNumbers.scrollTop = textarea.scrollTop;
+    });
+
+    textarea?.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        textarea.value = textarea.value.slice(0, start) + '  ' + textarea.value.slice(end);
+        textarea.selectionStart = textarea.selectionEnd = start + 2;
+        textarea.dispatchEvent(new Event('input'));
       }
     });
 
@@ -624,6 +657,18 @@ export class DemoView {
     body.querySelector('#inline-cancel-btn')?.addEventListener('click', () => {
       this._editingFileName = null;
       this._refreshFilesBody();
+    });
+
+    // Tab key in inline editor → insert spaces
+    body.querySelector('#inline-file-editor')?.addEventListener('keydown', (e) => {
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        const ta = e.currentTarget;
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        ta.value = ta.value.slice(0, start) + '  ' + ta.value.slice(end);
+        ta.selectionStart = ta.selectionEnd = start + 2;
+      }
     });
 
     // Set entry file
