@@ -8,6 +8,14 @@ import { toast } from 'components/toast.js';
 import { t, getLocale, setLocale, getSupportedLocales } from 'utils/i18n.js';
 import { icon } from 'utils/icons.js';
 
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 const TABS = () => [
   { id: 'import-export', label: t('settings.tab.import_export') },
   { id: 'storage', label: t('settings.tab.storage') },
@@ -138,9 +146,13 @@ export class SettingsView {
 
       <!-- Conflict dialog (hidden by default) -->
       <div id="conflict-dialog" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div class="card p-6 max-w-sm w-full mx-4">
-          <h3 class="font-semibold text-[var(--color-text-primary)] mb-2">${t('settings.import.conflict.title')}</h3>
-          <p class="text-sm text-[var(--color-text-secondary)] mb-4" id="conflict-desc"></p>
+        <div class="card p-6 max-w-md w-full mx-4">
+          <h3 class="font-semibold text-[var(--color-text-primary)] mb-1">${t('settings.import.conflict.title')}</h3>
+          <p class="text-sm text-[var(--color-text-secondary)] mb-3" id="conflict-desc"></p>
+          <div id="conflict-list"
+               class="max-h-40 overflow-y-auto rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] text-xs text-[var(--color-text-secondary)] mb-4 divide-y divide-[var(--color-border)]">
+          </div>
+          <p class="text-xs text-[var(--color-text-tertiary)] mb-3">${t('settings.import.conflict.choose')}</p>
           <div class="flex flex-col gap-2">
             <button id="conflict-skip" class="btn btn-secondary w-full">${t('settings.import.conflict.skip')}</button>
             <button id="conflict-overwrite" class="btn btn-secondary w-full">${t('settings.import.conflict.overwrite')}</button>
@@ -389,11 +401,7 @@ export class SettingsView {
     const totalConflicts = conflictingDemos.length + conflictingProjects.length;
 
     if (totalConflicts > 0) {
-      const strategy = await this.showConflictDialog(
-        totalConflicts,
-        conflictingDemos.length,
-        conflictingProjects.length
-      );
+      const strategy = await this.showConflictDialog(conflictingDemos, conflictingProjects);
       if (strategy === null) return; // user cancelled
       await this.doImport(data, strategy);
     } else {
@@ -401,10 +409,12 @@ export class SettingsView {
     }
   }
 
-  showConflictDialog(totalConflicts, demosCount, projectsCount) {
+  showConflictDialog(conflictingDemos, conflictingProjects) {
     return new Promise((resolve) => {
       const dialog = this.container.querySelector('#conflict-dialog');
       const descEl = this.container.querySelector('#conflict-desc');
+      const listEl = this.container.querySelector('#conflict-list');
+      const totalConflicts = conflictingDemos.length + conflictingProjects.length;
 
       if (!dialog) {
         resolve('skip');
@@ -412,6 +422,31 @@ export class SettingsView {
       }
 
       if (descEl) descEl.textContent = t('settings.import.conflict.message', { n: totalConflicts });
+
+      if (listEl) {
+        const rows = [];
+        if (conflictingProjects.length > 0) {
+          rows.push(
+            `<div class="px-3 py-1.5 font-medium text-[var(--color-text-tertiary)] uppercase tracking-wide text-[10px]">项目 (${conflictingProjects.length})</div>`
+          );
+          for (const p of conflictingProjects) {
+            rows.push(
+              `<div class="px-3 py-1.5 flex items-center gap-2">${icon('folder', 'w-3.5 h-3.5 shrink-0 text-[var(--color-accent)]')}<span class="truncate">${escapeHtml(p.title)}</span></div>`
+            );
+          }
+        }
+        if (conflictingDemos.length > 0) {
+          rows.push(
+            `<div class="px-3 py-1.5 font-medium text-[var(--color-text-tertiary)] uppercase tracking-wide text-[10px]">Demo (${conflictingDemos.length})</div>`
+          );
+          for (const d of conflictingDemos) {
+            rows.push(
+              `<div class="px-3 py-1.5 flex items-center gap-2">${icon('file-code', 'w-3.5 h-3.5 shrink-0 text-[var(--color-text-tertiary)]')}<span class="truncate">${escapeHtml(d.title)}</span></div>`
+            );
+          }
+        }
+        listEl.innerHTML = rows.join('');
+      }
 
       dialog.classList.remove('hidden');
 
