@@ -1,6 +1,12 @@
 import { appState } from 'store/app-state.js';
-import { getDemo, updateDemo, deleteDemo } from 'db/demos.js';
-import { getAssetsByDemo, deleteAssetsByDemo, saveAsset, deleteAsset } from 'db/assets.js';
+import { getDemo, updateDemo, deleteDemo, cloneDemo } from 'db/demos.js';
+import {
+  getAssetsByDemo,
+  deleteAssetsByDemo,
+  saveAsset,
+  deleteAsset,
+  cloneAssetsByDemo,
+} from 'db/assets.js';
 import { getAllProjects } from 'db/projects.js';
 import { buildSrcdoc, resolveFileSet } from 'utils/file-resolver.js';
 import { formatBytes } from 'utils/base64.js';
@@ -131,6 +137,12 @@ export class DemoView {
                   class="btn btn-icon btn-ghost shrink-0"
                   title="导出为独立 HTML 文件">
             ${icon('download', 'w-4 h-4')}
+          </button>
+
+          <button type="button" id="clone-demo-btn"
+                  class="btn btn-icon btn-ghost shrink-0"
+                  title="${t('demo.clone')}">
+            ${icon('copy', 'w-4 h-4')}
           </button>
 
           <button type="button" id="delete-demo-btn"
@@ -460,9 +472,26 @@ export class DemoView {
       this._exportHtml();
     });
 
+    this.container.querySelector('#clone-demo-btn')?.addEventListener('click', () => {
+      this._handleClone();
+    });
+
     this.container.querySelector('#delete-demo-btn')?.addEventListener('click', () => {
       this._handleDelete();
     });
+  }
+
+  async _handleClone() {
+    try {
+      const cloned = await cloneDemo(this.demo.id);
+      await cloneAssetsByDemo(this.demo.id, cloned.id);
+      appState.notifyDataChanged('demos');
+      toast.success('Demo 已克隆');
+      appState.navigate(`#/demos/${cloned.id}`);
+    } catch (err) {
+      console.error('Clone error:', err);
+      toast.error('克隆失败，请重试');
+    }
   }
 
   async _exportHtml() {

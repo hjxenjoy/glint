@@ -1,7 +1,7 @@
 import { appState } from 'store/app-state.js';
-import { getAllDemos, deleteDemo, createDemo } from 'db/demos.js';
+import { getAllDemos, deleteDemo, createDemo, cloneDemo } from 'db/demos.js';
 import { getAllProjects } from 'db/projects.js';
-import { deleteAssetsByDemo } from 'db/assets.js';
+import { deleteAssetsByDemo, cloneAssetsByDemo } from 'db/assets.js';
 import { formatRelative } from 'utils/date.js';
 import { confirm } from 'components/modal.js';
 import { toast } from 'components/toast.js';
@@ -85,6 +85,12 @@ function renderDemoCard(demo, projectsMap) {
            data-demo-id="${escapeHtml(demo.id)}">
           ${icon('pencil-simple', 'w-3.5 h-3.5')}
         </a>
+        <button class="btn btn-icon w-7 h-7 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-[var(--color-accent)] text-white shadow-sm"
+                title="${t('demo.clone')}"
+                data-action="clone"
+                data-demo-id="${escapeHtml(demo.id)}">
+          ${icon('copy', 'w-3.5 h-3.5')}
+        </button>
         <button class="btn btn-icon w-7 h-7 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-red-400 hover:text-red-400 text-white shadow-sm"
                 title="${t('demo.delete')}"
                 data-action="delete"
@@ -367,6 +373,23 @@ export class HomeView {
         } catch (err) {
           console.error(err);
           toast.error('删除失败，请重试');
+        }
+      });
+    });
+
+    // Clone buttons
+    this.container.querySelectorAll('[data-action="clone"]').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.demoId;
+        try {
+          const cloned = await cloneDemo(id);
+          await cloneAssetsByDemo(id, cloned.id);
+          appState.notifyDataChanged('demos');
+          toast.success('Demo 已克隆');
+        } catch (err) {
+          console.error(err);
+          toast.error('克隆失败，请重试');
         }
       });
     });
@@ -657,6 +680,22 @@ export class AllDemosView {
         } catch (err) {
           console.error(err);
           toast.error('删除失败，请重试');
+        }
+      });
+    });
+
+    root.querySelectorAll('[data-action="clone"]').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.demoId;
+        try {
+          const cloned = await cloneDemo(id);
+          await cloneAssetsByDemo(id, cloned.id);
+          appState.notifyDataChanged('demos');
+          toast.success('Demo 已克隆');
+        } catch (err) {
+          console.error(err);
+          toast.error('克隆失败，请重试');
         }
       });
     });

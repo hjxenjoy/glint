@@ -1,7 +1,7 @@
 import { appState } from 'store/app-state.js';
 import { getProject, updateProject, deleteProject } from 'db/projects.js';
-import { getDemosByProject, deleteDemo, updateDemo } from 'db/demos.js';
-import { deleteAssetsByDemo } from 'db/assets.js';
+import { getDemosByProject, deleteDemo, updateDemo, cloneDemo } from 'db/demos.js';
+import { deleteAssetsByDemo, cloneAssetsByDemo } from 'db/assets.js';
 import { formatRelative, formatFull } from 'utils/date.js';
 import { confirm } from 'components/modal.js';
 import { toast } from 'components/toast.js';
@@ -208,6 +208,11 @@ export class ProjectView {
              title="${t('demo.edit')}">
             ${icon('pencil-simple', 'w-3 h-3')}
           </a>
+          <button class="btn btn-icon w-6 h-6 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-[var(--color-accent)] text-white demo-clone-btn"
+                  data-demo-id="${escapeHtml(demo.id)}"
+                  title="${t('demo.clone')}">
+            ${icon('copy', 'w-3 h-3')}
+          </button>
           <button class="btn btn-icon w-6 h-6 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-red-400 hover:text-red-400 text-white demo-delete-btn"
                   data-demo-id="${escapeHtml(demo.id)}"
                   data-demo-title="${escapeHtml(demo.title)}"
@@ -350,8 +355,19 @@ export class ProjectView {
       this.handleDeleteProject();
     });
 
-    // Demo delete buttons
-    this.container.querySelectorAll('.demo-delete-btn').forEach((btn) => {
+    this._bindDemoCardEvents(this.container);
+  }
+
+  _bindDemoCardEvents(root) {
+    root.querySelectorAll('.demo-clone-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleCloneDemo(btn.dataset.demoId);
+      });
+    });
+
+    root.querySelectorAll('.demo-delete-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -383,6 +399,24 @@ export class ProjectView {
     }
   }
 
+  async handleCloneDemo(demoId) {
+    try {
+      const cloned = await cloneDemo(demoId);
+      await cloneAssetsByDemo(demoId, cloned.id);
+      this.demos = [...this.demos, cloned].sort((a, b) => a.title.localeCompare(b.title, 'zh'));
+      const demoGrid = this.container.querySelector('#demo-grid');
+      if (demoGrid) {
+        demoGrid.innerHTML = this.renderDemoGrid();
+        this._bindDemoCardEvents(demoGrid);
+      }
+      appState.notifyDataChanged('demo');
+      toast.success('Demo 已克隆');
+    } catch (err) {
+      console.error('Clone demo error:', err);
+      toast.error('克隆失败，请重试');
+    }
+  }
+
   async handleDeleteDemo(demoId, demoTitle) {
     const confirmed = await confirm({
       title: t('demo.delete.confirm.title'),
@@ -401,13 +435,7 @@ export class ProjectView {
       const demoGrid = this.container.querySelector('#demo-grid');
       if (demoGrid) {
         demoGrid.innerHTML = this.renderDemoGrid();
-        this.container.querySelectorAll('.demo-delete-btn').forEach((btn) => {
-          btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            this.handleDeleteDemo(btn.dataset.demoId, btn.dataset.demoTitle);
-          });
-        });
+        this._bindDemoCardEvents(demoGrid);
       }
       appState.notifyDataChanged('demo');
       toast.success('Demo 已删除');

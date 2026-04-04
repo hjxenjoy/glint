@@ -71,6 +71,7 @@ const translations = {
 
     // Demo Card
     'demo.edit': '编辑',
+    'demo.clone': '克隆',
     'demo.delete': '删除',
     'demo.updated': '更新于 {time}',
     'demo.no_project': '无项目',
@@ -338,6 +339,7 @@ const translations = {
 
     // Demo Card
     'demo.edit': 'Edit',
+    'demo.clone': 'Clone',
     'demo.delete': 'Delete',
     'demo.updated': 'Updated {time}',
     'demo.no_project': 'No project',

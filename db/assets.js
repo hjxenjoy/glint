@@ -44,6 +44,17 @@ export async function deleteAsset(id) {
   return req(tx.objectStore(STORES.ASSETS).delete(id));
 }
 
+export async function cloneAssetsByDemo(srcDemoId, newDemoId) {
+  const assets = await getAssetsByDemo(srcDemoId);
+  if (!assets.length) return [];
+  const db = await getDB();
+  const tx = db.transaction(STORES.ASSETS, 'readwrite');
+  const store = tx.objectStore(STORES.ASSETS);
+  const cloned = assets.map((a) => ({ ...a, id: crypto.randomUUID(), demoId: newDemoId }));
+  await Promise.all(cloned.map((a) => req(store.add(a))));
+  return cloned;
+}
+
 export async function deleteAssetsByDemo(demoId) {
   const assets = await getAssetsByDemo(demoId);
   const db = await getDB();

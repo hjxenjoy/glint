@@ -69,6 +69,22 @@ export async function updateDemo(id, changes) {
   return updated;
 }
 
+export async function cloneDemo(id) {
+  const src = await getDemo(id);
+  if (!src) throw new Error(`Demo not found: ${id}`);
+  const clone = {
+    ...src,
+    id: crypto.randomUUID(),
+    title: src.title + ' (副本)',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  const db = await getDB();
+  const tx = db.transaction(STORES.DEMOS, 'readwrite');
+  await req(tx.objectStore(STORES.DEMOS).add(clone));
+  return clone;
+}
+
 export async function deleteDemo(id) {
   const db = await getDB();
   const tx = db.transaction(STORES.DEMOS, 'readwrite');
