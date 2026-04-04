@@ -1,11 +1,14 @@
-const CACHE_VERSION = 'v3';
-const SHELL_CACHE = 'glint-shell-v3';
-const CDN_CACHE = 'glint-cdn-v3';
+const CACHE_VERSION = 'v4';
+const SHELL_CACHE = 'glint-shell-v4';
+const CDN_CACHE = 'glint-cdn-v4';
 
 const SHELL_FILES = [
   '/',
   '/index.html',
   '/manifest.json',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
+  '/icons/apple-touch-icon.png',
   '/styles/tailwind.css',
   '/styles/layers.css',
   '/styles/theme.css',
