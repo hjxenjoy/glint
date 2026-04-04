@@ -390,7 +390,6 @@ export class AllDemosView {
     this.projectsMap = new Map();
     this.filtered = [];
     this.filterQuery = '';
-    this.filterTag = '';
     this.sortBy = 'updated'; // 'updated' | 'created' | 'title'
     this.groupByProject = false;
     this._onDataChanged = () => this.loadData();
@@ -435,9 +434,6 @@ export class AllDemosView {
           (d.tags || []).some((tag) => tag.toLowerCase().includes(q))
       );
     }
-    if (this.filterTag) {
-      results = results.filter((d) => (d.tags || []).includes(this.filterTag));
-    }
     if (this.sortBy === 'created') {
       results.sort((a, b) => b.createdAt - a.createdAt);
     } else if (this.sortBy === 'title') {
@@ -467,11 +463,6 @@ export class AllDemosView {
   }
 
   render() {
-    // Gather all unique tags from allDemos
-    const allTags = [...new Set(this.allDemos.flatMap((d) => d.tags || []))].sort((a, b) =>
-      a.localeCompare(b, 'zh')
-    );
-
     this.container.innerHTML = `
       <div class="p-6 max-w-7xl mx-auto">
 
@@ -500,17 +491,6 @@ export class AllDemosView {
                    value="${escapeHtml(this.filterQuery)}"
                    class="w-full pl-9 pr-3 h-9 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-sm text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors" />
           </div>
-
-          <!-- Tag filter -->
-          ${
-            allTags.length > 0
-              ? `<select id="filter-tag"
-                         class="h-9 px-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-sm text-[var(--color-text-primary)] focus:outline-none focus:border-[var(--color-accent)] transition-colors cursor-pointer">
-                   <option value="">${t('demos.filter.tag_all')}</option>
-                   ${allTags.map((tag) => `<option value="${escapeHtml(tag)}" ${this.filterTag === tag ? 'selected' : ''}>${escapeHtml(tag)}</option>`).join('')}
-                 </select>`
-              : ''
-          }
 
           <!-- Sort -->
           <select id="filter-sort"
@@ -595,7 +575,7 @@ export class AllDemosView {
   }
 
   _renderEmptyState() {
-    const hasFilters = this.filterQuery || this.filterTag;
+    const hasFilters = !!this.filterQuery;
     return `
       <div class="flex flex-col items-center justify-center py-20 text-center">
         <div class="w-14 h-14 rounded-2xl bg-[var(--color-bg-tertiary)] flex items-center justify-center mb-4">
@@ -618,7 +598,6 @@ export class AllDemosView {
 
   _bindFilterEvents() {
     const searchInput = this.container.querySelector('#filter-search');
-    const tagSelect = this.container.querySelector('#filter-tag');
     const sortSelect = this.container.querySelector('#filter-sort');
     const groupToggle = this.container.querySelector('#toggle-group');
 
@@ -629,11 +608,6 @@ export class AllDemosView {
         this.filterQuery = searchInput.value;
         this.applyFilters();
       }, 180);
-    });
-
-    tagSelect?.addEventListener('change', () => {
-      this.filterTag = tagSelect.value;
-      this.applyFilters();
     });
 
     sortSelect?.addEventListener('change', () => {

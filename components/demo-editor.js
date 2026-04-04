@@ -7,7 +7,6 @@ import { base64Size, formatBytes } from 'utils/base64.js';
 import { formatFull } from 'utils/date.js';
 import { toast } from 'components/toast.js';
 import { confirm } from 'components/modal.js';
-import { TagInput } from 'components/tag-input.js';
 import { t } from 'utils/i18n.js';
 import { icon } from 'utils/icons.js';
 
@@ -528,12 +527,6 @@ export class DemoEditor {
           >${escapeHtml(d.notes || '')}</textarea>
         </div>
 
-        <!-- Tags -->
-        <div class="space-y-1.5">
-          <label class="block text-sm font-medium text-[var(--color-text-primary)]">${t('editor.tags')}</label>
-          <div id="tag-input-host"></div>
-        </div>
-
         <!-- Project selector -->
         <div class="space-y-1.5">
           <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="meta-project">
@@ -583,15 +576,6 @@ export class DemoEditor {
 
   bindMetaTabEvents() {
     const content = this.container.querySelector('#tab-content');
-    const tagHost = content.querySelector('#tag-input-host');
-
-    this.tagInput = new TagInput(tagHost, {
-      value: this.demo.tags || [],
-      onChange: (tags) => {
-        this.demo.tags = tags;
-        this.unsavedChanges = true;
-      },
-    });
 
     const titleEl = content.querySelector('#meta-title');
     const notesEl = content.querySelector('#meta-notes');
@@ -992,12 +976,6 @@ export class NewDemoView {
               <textarea id="new-notes" class="input w-full h-20 resize-y" placeholder="${escapeHtml(t('new_demo.notes_placeholder'))}">${escapeHtml(this.notes)}</textarea>
             </div>
 
-            <!-- Tags -->
-            <div class="space-y-1.5">
-              <label class="block text-sm font-medium text-[var(--color-text-primary)]">${t('new_demo.tags_label')}</label>
-              <div id="new-tag-host"></div>
-            </div>
-
             <!-- Project -->
             <div class="space-y-1.5">
               <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="new-project">${t('new_demo.project_label')}</label>
@@ -1044,14 +1022,6 @@ export class NewDemoView {
     c.querySelector('#back-to-step1')?.addEventListener('click', () => {
       this.step = 1;
       this.render();
-    });
-
-    const tagHost = c.querySelector('#new-tag-host');
-    this.tagInput = new TagInput(tagHost, {
-      value: this.tags,
-      onChange: (tags) => {
-        this.tags = tags;
-      },
     });
 
     const titleEl = c.querySelector('#new-title');
@@ -1165,7 +1135,7 @@ export class NewDemoView {
         projectId: this.projectId,
         title,
         notes: this.container.querySelector('#new-notes')?.value || this.notes,
-        tags: this.tagInput ? this.tagInput.getTags() : this.tags,
+        tags: [],
         entryFile: this.entryFile,
         files: filesToSave,
       });
