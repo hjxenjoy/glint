@@ -80,6 +80,7 @@ const translations = {
     'project.new_demo': '新建 Demo',
     'project.edit_title': '点击编辑标题',
     'project.no_demos': '该项目还没有 Demo',
+    'project.export': '导出项目',
     'project.delete': '删除项目',
     'project.delete.confirm.title': '删除项目',
     'project.delete.confirm.message': '删除项目将不会删除其中的 Demo，Demo 将变为独立状态',
@@ -348,6 +349,7 @@ const translations = {
     'project.new_demo': 'New Demo',
     'project.edit_title': 'Click to edit title',
     'project.no_demos': 'No demos in this project yet',
+    'project.export': 'Export Project',
     'project.delete': 'Delete Project',
     'project.delete.confirm.title': 'Delete Project',
     'project.delete.confirm.message':

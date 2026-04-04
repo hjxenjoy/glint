@@ -1,7 +1,8 @@
 import { appState } from 'store/app-state.js';
 import { getProject, updateProject, deleteProject } from 'db/projects.js';
 import { getDemosByProject, deleteDemo, updateDemo, cloneDemo } from 'db/demos.js';
-import { deleteAssetsByDemo, cloneAssetsByDemo } from 'db/assets.js';
+import { deleteAssetsByDemo, cloneAssetsByDemo, getAssetsByDemo } from 'db/assets.js';
+import { packExport, triggerDownload } from 'utils/zip.js';
 import { formatRelative, formatFull } from 'utils/date.js';
 import { confirm } from 'components/modal.js';
 import { toast } from 'components/toast.js';
@@ -98,10 +99,17 @@ export class ProjectView {
                 aria-label="项目名称"
               />
             </div>
-            <button class="btn btn-danger btn-sm gap-1.5 shrink-0" id="delete-project-btn">
-              ${icon('trash', 'w-3.5 h-3.5')}
-              ${t('project.delete')}
-            </button>
+            <div class="flex items-center gap-2 shrink-0">
+              <button class="btn btn-secondary btn-sm gap-1.5" id="export-project-btn"
+                      title="${t('project.export')}">
+                ${icon('download', 'w-3.5 h-3.5')}
+                ${t('project.export')}
+              </button>
+              <button class="btn btn-danger btn-sm gap-1.5" id="delete-project-btn">
+                ${icon('trash', 'w-3.5 h-3.5')}
+                ${t('project.delete')}
+              </button>
+            </div>
           </div>
 
           <!-- Description / notes -->
@@ -350,6 +358,11 @@ export class ProjectView {
       }
     });
 
+    // Export project
+    this.container.querySelector('#export-project-btn')?.addEventListener('click', () => {
+      this.handleExportProject();
+    });
+
     // Delete project
     this.container.querySelector('#delete-project-btn').addEventListener('click', () => {
       this.handleDeleteProject();
@@ -374,6 +387,29 @@ export class ProjectView {
         this.handleDeleteDemo(btn.dataset.demoId, btn.dataset.demoTitle);
       });
     });
+  }
+
+  async handleExportProject() {
+    const btn = this.container.querySelector('#export-project-btn');
+    if (btn) btn.disabled = true;
+    try {
+      const demosWithAssets = await Promise.all(
+        this.demos.map(async (demo) => {
+          const assets = await getAssetsByDemo(demo.id);
+          return { ...demo, assets };
+        })
+      );
+      const data = { projects: [this.project], demos: demosWithAssets };
+      const blob = await packExport(data);
+      const safe = this.project.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_');
+      triggerDownload(blob, `glint-project-${safe}.zip`);
+      toast.success('项目已导出为 ZIP');
+    } catch (err) {
+      console.error('Export project error:', err);
+      toast.error('导出失败：' + (err.message || '未知错误'));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   }
 
   async handleDeleteProject() {
