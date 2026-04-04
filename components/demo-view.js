@@ -127,6 +127,12 @@ export class DemoView {
             ${tabBtn('toggle-info', 'info', 'info', t('editor.tab.metadata'))}
           </div>
 
+          <button type="button" id="export-html-btn"
+                  class="btn btn-icon btn-ghost shrink-0"
+                  title="导出为独立 HTML 文件">
+            ${icon('download', 'w-4 h-4')}
+          </button>
+
           <button type="button" id="delete-demo-btn"
                   class="btn btn-icon btn-ghost hover:text-[var(--color-danger)] shrink-0"
                   title="${t('demo.delete_btn')}">
@@ -450,9 +456,32 @@ export class DemoView {
       });
     }
 
+    this.container.querySelector('#export-html-btn')?.addEventListener('click', () => {
+      this._exportHtml();
+    });
+
     this.container.querySelector('#delete-demo-btn')?.addEventListener('click', () => {
       this._handleDelete();
     });
+  }
+
+  async _exportHtml() {
+    try {
+      const srcdoc = buildSrcdoc(this.demo, this.assets);
+      const blob = new Blob([srcdoc], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${this.demo.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_')}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('已导出为独立 HTML 文件');
+    } catch (err) {
+      console.error('Export HTML error:', err);
+      toast.error('导出失败');
+    }
   }
 
   // ─── Code events ────────────────────────────────────────────────────────────
