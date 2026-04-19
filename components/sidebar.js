@@ -194,17 +194,7 @@ export class Sidebar {
     return `
       <div class="mb-0.5 project-group" data-project-id="${escapeHtml(project.id)}"
            ${isManual ? 'draggable="true"' : ''}>
-        <div class="flex items-center group">
-          ${
-            isManual
-              ? `
-            <span class="shrink-0 px-0.5 cursor-grab text-[var(--color-text-tertiary)] opacity-0 group-hover:opacity-60 transition-opacity select-none"
-                  title="拖拽排序">
-              ${icon('dots-three-vertical', 'w-3.5 h-3.5')}
-            </span>
-          `
-              : ''
-          }
+        <div class="flex items-center group${isManual ? ' cursor-grab active:cursor-grabbing' : ''}">
           <button type="button"
                   class="collapse-toggle shrink-0 p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
                   data-collapse-id="${escapeHtml(project.id)}"

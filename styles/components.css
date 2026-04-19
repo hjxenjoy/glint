@@ -158,7 +158,7 @@
   }
 
   .btn-icon {
-    padding: 0.5rem;
+    padding: 0;
     width: 2.25rem;
     height: 2.25rem;
     border-radius: var(--radius-md);
