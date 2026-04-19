@@ -81,7 +81,10 @@ export class DemoView {
 
   async _loadPreview() {
     if (!this.previewPanel) return;
-    const srcdoc = await buildSrcdoc(this.demo, this.assets, this.activeFileName);
+    const project = this.demo?.projectId
+      ? this.projects.find((p) => p.id === this.demo.projectId)
+      : null;
+    const srcdoc = buildSrcdoc(this.demo, this.assets, this.activeFileName, project?.sharedFiles);
     this.previewPanel.setSrcdoc(srcdoc);
   }
 

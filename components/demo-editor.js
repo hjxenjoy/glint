@@ -1,7 +1,7 @@
 import { appState } from 'store/app-state.js';
 import { getDemo, updateDemo, createDemo } from 'db/demos.js';
 import { getAssetsByDemo, saveAsset, deleteAsset } from 'db/assets.js';
-import { getAllProjects } from 'db/projects.js';
+import { getAllProjects, getProject, updateProject } from 'db/projects.js';
 import { resolveFileSet } from 'utils/file-resolver.js';
 import { base64Size, formatBytes } from 'utils/base64.js';
 import { formatFull } from 'utils/date.js';
@@ -723,7 +723,9 @@ export class NewDemoView {
   }
 
   render() {
-    if (this.step === 1) {
+    if (this.bulkMode) {
+      this.renderBulkCreate();
+    } else if (this.step === 1) {
       this.renderStep1();
     } else {
       this.renderStep2();
@@ -844,26 +846,241 @@ export class NewDemoView {
   async handleUpload(fileList) {
     try {
       const result = await resolveFileSet(fileList);
-      this.files = result.files;
-      this.assets = result.assets;
-      this.entryFile = result.entryFile;
       this.method = 'upload';
 
-      // Pre-fill title: try <title> tag first, then filename
-      const htmlFile = result.files.find((f) => f.name === result.entryFile);
-      const fromTitle = htmlFile ? extractHtmlTitle(htmlFile.content) : '';
-      if (fromTitle) {
-        this.title = fromTitle;
-      } else if (htmlFile) {
-        this.title = htmlFile.name.replace(/\.[^.]+$/, '');
-      } else if (result.files.length > 0) {
-        this.title = result.files[0].name.replace(/\.[^.]+$/, '');
-      }
+      const htmlFiles = result.files.filter(
+        (f) => f.name.endsWith('.html') || f.name.endsWith('.htm')
+      );
 
-      this.step = 2;
-      this.render();
+      if (htmlFiles.length > 1) {
+        // Bulk mode: each HTML becomes its own demo
+        this.bulkMode = true;
+        this.bulkHtmlFiles = htmlFiles;
+        // Shared (non-HTML) text files: CSS, JS, etc.
+        this.bulkSharedFiles = result.files.filter(
+          (f) => !f.name.endsWith('.html') && !f.name.endsWith('.htm')
+        );
+        this.assets = result.assets;
+        // Pre-fill per-demo titles
+        this.bulkTitles = htmlFiles.map((f) => {
+          return extractHtmlTitle(f.content) || f.name.replace(/\.[^.]+$/, '');
+        });
+        this.render();
+      } else {
+        // Single demo mode
+        this.bulkMode = false;
+        this.files = result.files;
+        this.assets = result.assets;
+        this.entryFile = result.entryFile;
+
+        const htmlFile = result.files.find((f) => f.name === result.entryFile);
+        const fromTitle = htmlFile ? extractHtmlTitle(htmlFile.content) : '';
+        if (fromTitle) {
+          this.title = fromTitle;
+        } else if (htmlFile) {
+          this.title = htmlFile.name.replace(/\.[^.]+$/, '');
+        } else if (result.files.length > 0) {
+          this.title = result.files[0].name.replace(/\.[^.]+$/, '');
+        }
+
+        this.step = 2;
+        this.render();
+      }
     } catch (err) {
       toast.error('上传失败: ' + err.message);
+    }
+  }
+
+  // ---- Bulk create mode ----
+
+  renderBulkCreate() {
+    const cssShared = this.bulkSharedFiles.filter((f) => f.name.endsWith('.css'));
+    const otherShared = this.bulkSharedFiles.filter((f) => !f.name.endsWith('.css'));
+
+    const projectOptions = this.projects
+      .map(
+        (p) =>
+          `<option value="${escapeHtml(p.id)}" ${this.projectId === p.id ? 'selected' : ''}>${escapeHtml(p.title)}</option>`
+      )
+      .join('');
+
+    const demoRows = this.bulkHtmlFiles
+      .map(
+        (f, i) => `
+        <div class="flex items-center gap-3 py-2 border-b border-[var(--color-border)] last:border-0">
+          <span class="shrink-0 text-[var(--color-text-tertiary)]">${icon('file-code', 'w-4 h-4')}</span>
+          <span class="font-mono text-xs text-[var(--color-text-secondary)] w-32 shrink-0 truncate" title="${escapeHtml(f.name)}">${escapeHtml(f.name)}</span>
+          <input
+            type="text"
+            class="input flex-1 text-sm"
+            data-bulk-title="${i}"
+            value="${escapeHtml(this.bulkTitles[i])}"
+            placeholder="Demo 标题"
+          >
+        </div>
+      `
+      )
+      .join('');
+
+    const cssNote =
+      cssShared.length > 0
+        ? `<p class="text-xs text-[var(--color-text-tertiary)] mt-1">
+           ${cssShared.length} 个 CSS 文件将${this.projectId ? '共享到所选项目' : '包含在每个 Demo 中'}：
+           ${cssShared.map((f) => `<span class="font-mono">${escapeHtml(f.name)}</span>`).join('、')}
+         </p>`
+        : '';
+
+    this.container.innerHTML = `
+      <div class="flex flex-col h-full overflow-hidden">
+        <div class="flex items-center gap-3 px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)] shrink-0">
+          <button class="btn btn-icon btn-ghost" id="back-to-step1" aria-label="返回">
+            ${icon('arrow-left', 'w-4 h-4')}
+          </button>
+          <h1 class="text-sm font-semibold text-[var(--color-text-primary)]">批量创建 Demo</h1>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4">
+          <div class="max-w-xl space-y-5">
+
+            <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-4 space-y-1">
+              <p class="text-sm text-[var(--color-text-primary)]">
+                检测到 <strong>${this.bulkHtmlFiles.length}</strong> 个 HTML 文件，将分别创建 <strong>${this.bulkHtmlFiles.length}</strong> 个 Demo。
+              </p>
+              ${cssNote}
+              ${otherShared.length > 0 ? `<p class="text-xs text-[var(--color-text-tertiary)]">其他文件（${otherShared.map((f) => `<span class="font-mono">${escapeHtml(f.name)}</span>`).join('、')}）将包含在每个 Demo 中。</p>` : ''}
+            </div>
+
+            <!-- Per-demo titles -->
+            <div class="space-y-1.5">
+              <label class="block text-sm font-medium text-[var(--color-text-primary)]">各 Demo 标题</label>
+              <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-secondary)] px-3 divide-y divide-[var(--color-border)]">
+                ${demoRows}
+              </div>
+            </div>
+
+            <!-- Project -->
+            <div class="space-y-1.5">
+              <label class="block text-sm font-medium text-[var(--color-text-primary)]" for="bulk-project">关联到项目</label>
+              <select id="bulk-project" class="input w-full">
+                <option value="" ${!this.projectId ? 'selected' : ''}>不关联项目</option>
+                ${projectOptions}
+              </select>
+              ${cssShared.length > 0 ? `<p class="text-xs text-[var(--color-text-tertiary)]">选择项目后，CSS 文件将作为项目共享样式，项目内所有 Demo 均可使用，且不会重复保存。</p>` : ''}
+            </div>
+
+            <div class="flex gap-3 pt-2">
+              <button class="btn btn-primary flex-1" id="bulk-create-btn">创建 ${this.bulkHtmlFiles.length} 个 Demo</button>
+              <a href="#/" class="btn btn-secondary">取消</a>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.container.querySelector('#back-to-step1')?.addEventListener('click', () => {
+      this.bulkMode = false;
+      this.step = 1;
+      this.render();
+    });
+
+    this.container.querySelector('#bulk-project')?.addEventListener('change', (e) => {
+      this.projectId = e.target.value || null;
+      // Re-render the CSS note area
+      const cssNoteEl = this.container.querySelector('#bulk-css-note');
+      if (cssNoteEl && cssShared.length > 0) {
+        cssNoteEl.textContent = `${cssShared.length} 个 CSS 文件将${this.projectId ? '共享到所选项目' : '包含在每个 Demo 中'}`;
+      }
+    });
+
+    this.container.querySelectorAll('[data-bulk-title]').forEach((input) => {
+      input.addEventListener('input', () => {
+        const i = parseInt(input.dataset.bulkTitle, 10);
+        this.bulkTitles[i] = input.value;
+      });
+    });
+
+    this.container
+      .querySelector('#bulk-create-btn')
+      ?.addEventListener('click', () => this.createBulk());
+  }
+
+  async createBulk() {
+    const btn = this.container.querySelector('#bulk-create-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '创建中…';
+    }
+
+    try {
+      const projectId = this.projectId || null;
+      const cssFiles = this.bulkSharedFiles.filter((f) => f.name.endsWith('.css'));
+      const nonCssShared = this.bulkSharedFiles.filter((f) => !f.name.endsWith('.css'));
+
+      // Save CSS files to project sharedFiles (merge, skip existing by name)
+      if (projectId && cssFiles.length > 0) {
+        const project = await getProject(projectId);
+        const existing = new Set((project.sharedFiles || []).map((f) => f.name));
+        const toAdd = cssFiles.filter((f) => !existing.has(f.name));
+        if (toAdd.length > 0) {
+          await updateProject(projectId, {
+            sharedFiles: [...(project.sharedFiles || []), ...toAdd],
+          });
+        }
+      }
+
+      // Create one demo per HTML file
+      const createdIds = [];
+      for (let i = 0; i < this.bulkHtmlFiles.length; i++) {
+        const htmlFile = this.bulkHtmlFiles[i];
+        const title =
+          (this.bulkTitles[i] || '').trim() ||
+          extractHtmlTitle(htmlFile.content) ||
+          htmlFile.name.replace(/\.[^.]+$/, '');
+
+        // Each demo gets: its own HTML + non-CSS shared files
+        // CSS goes to project; if no project, include CSS in each demo
+        const demoFiles = [htmlFile, ...nonCssShared];
+        if (!projectId) demoFiles.push(...cssFiles);
+
+        const newDemo = await createDemo({
+          projectId,
+          title,
+          notes: '',
+          entryFile: htmlFile.name,
+          files: demoFiles,
+        });
+
+        // All images go to every demo (they'll only be rendered where referenced)
+        await Promise.all(
+          this.assets.map((a) =>
+            saveAsset({
+              demoId: newDemo.id,
+              filename: a.filename,
+              mimeType: a.mimeType,
+              data: a.data,
+              size: a.size,
+            })
+          )
+        );
+
+        createdIds.push(newDemo.id);
+      }
+
+      toast.success(`已创建 ${createdIds.length} 个 Demo`);
+      appState.notifyDataChanged('demos');
+
+      if (projectId) {
+        appState.navigate(`#/projects/${projectId}`);
+      } else {
+        appState.navigate(`#/demos/${createdIds[0]}`);
+      }
+    } catch (err) {
+      toast.error('批量创建失败: ' + err.message);
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = `创建 ${this.bulkHtmlFiles.length} 个 Demo`;
+      }
     }
   }
 

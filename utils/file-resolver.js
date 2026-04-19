@@ -142,7 +142,8 @@ function inlineCSSAssets(css, assetsMap) {
 
 // Build complete srcdoc string for iframe preview.
 // Pass fileNameOverride to render a specific file instead of the default.
-export function buildSrcdoc(demo, assets, fileNameOverride = null) {
+// projectSharedFiles: Array<{name, content, mimeType}> from parent project (fallback CSS).
+export function buildSrcdoc(demo, assets, fileNameOverride = null, projectSharedFiles = []) {
   const entryFile = fileNameOverride
     ? (demo.files?.find((f) => f.name === fileNameOverride) ?? demo.files?.[0])
     : (demo.files?.find((f) => f.name === demo.entryFile) ?? demo.files?.[0]);
@@ -157,9 +158,16 @@ export function buildSrcdoc(demo, assets, fileNameOverride = null) {
     assetsMap[basename] = asset.data;
   }
 
+  // Demo's own CSS files take priority; project shared CSS fills in the rest
   const cssFiles = Object.fromEntries(
     (demo.files || []).filter((f) => f.name.endsWith('.css')).map((f) => [f.name, f.content])
   );
+  for (const f of projectSharedFiles || []) {
+    if (!f.name.endsWith('.css')) continue;
+    const basename = f.name.split('/').pop();
+    if (!cssFiles[f.name]) cssFiles[f.name] = f.content;
+    if (!cssFiles[basename]) cssFiles[basename] = f.content;
+  }
 
   return inlineAssets(entryFile.content, assetsMap, cssFiles);
 }
