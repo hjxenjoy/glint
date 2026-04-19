@@ -228,13 +228,16 @@ export class ProjectView {
     const isSelected = this.selectedDemoIds.has(demo.id);
 
     return `
-      <div class="demo-card group relative flex flex-col rounded-xl border ${isSelected ? 'border-[var(--color-accent)] ring-2 ring-[var(--color-accent)]/30' : 'border-[var(--color-border)]'} bg-[var(--color-bg-secondary)] hover:border-[var(--color-accent)] hover:shadow-md transition-all duration-200 overflow-hidden"
+      <div class="demo-card group relative flex flex-col rounded-xl border-2 ${isSelected ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/5 shadow-[0_0_0_1px_var(--color-accent)]' : 'border-[var(--color-border)] hover:border-[var(--color-accent)]'} bg-[var(--color-bg-secondary)] hover:shadow-md transition-all duration-200 overflow-hidden"
            data-demo-id="${escapeHtml(demo.id)}">
         ${
           this.selectionMode
             ? `
-          <label class="absolute top-2 left-2 z-10 cursor-pointer">
-            <input type="checkbox" class="demo-select-checkbox w-4 h-4 accent-[var(--color-accent)]"
+          <label class="absolute top-2 left-2 z-10 cursor-pointer" title="${isSelected ? '取消选择' : '选择'}">
+            <div class="w-5 h-5 rounded flex items-center justify-center ${isSelected ? 'bg-[var(--color-accent)]' : 'bg-black/50 border-2 border-white/50'}">
+              ${isSelected ? icon('check', 'w-3.5 h-3.5 text-white') : ''}
+            </div>
+            <input type="checkbox" class="demo-select-checkbox sr-only"
                    data-demo-id="${escapeHtml(demo.id)}" ${isSelected ? 'checked' : ''} />
           </label>
         `
@@ -261,28 +264,28 @@ export class ProjectView {
         ${
           !this.selectionMode
             ? `
-          <div class="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <a href="#/demos/${escapeHtml(demo.id)}/edit"
-               class="btn btn-icon w-6 h-6 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-[var(--color-accent)] text-white"
+               class="btn btn-icon w-7 h-7 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-[var(--color-accent)] text-white"
                title="${t('demo.edit')}">
-              ${icon('code', 'w-3 h-3')}
+              ${icon('code', 'w-3.5 h-3.5')}
             </a>
-            <button class="btn btn-icon w-6 h-6 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-[var(--color-accent)] text-white demo-rename-btn"
+            <button class="btn btn-icon w-7 h-7 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-[var(--color-accent)] text-white demo-rename-btn"
                     data-demo-id="${escapeHtml(demo.id)}"
                     data-demo-title="${escapeHtml(demo.title)}"
                     title="重命名">
-              ${icon('pencil-simple', 'w-3 h-3')}
+              ${icon('pencil-simple', 'w-3.5 h-3.5')}
             </button>
-            <button class="btn btn-icon w-6 h-6 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-[var(--color-accent)] text-white demo-clone-btn"
+            <button class="btn btn-icon w-7 h-7 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-[var(--color-accent)] text-white demo-clone-btn"
                     data-demo-id="${escapeHtml(demo.id)}"
                     title="${t('demo.clone')}">
-              ${icon('copy', 'w-3 h-3')}
+              ${icon('copy', 'w-3.5 h-3.5')}
             </button>
-            <button class="btn btn-icon w-6 h-6 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-red-400 hover:text-red-400 text-white demo-delete-btn"
+            <button class="btn btn-icon w-7 h-7 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-red-400 hover:text-red-400 text-white demo-delete-btn"
                     data-demo-id="${escapeHtml(demo.id)}"
                     data-demo-title="${escapeHtml(demo.title)}"
                     title="${t('demo.delete')}">
-              ${icon('trash', 'w-3 h-3')}
+              ${icon('trash', 'w-3.5 h-3.5')}
             </button>
           </div>
         `
