@@ -469,38 +469,18 @@ export class ProjectView {
   }
 
   _bindDemoCardEvents(root) {
-    // Checkbox selection
-    root.querySelectorAll('.demo-select-checkbox').forEach((cb) => {
-      cb.addEventListener('change', (e) => {
-        e.stopPropagation();
-        const id = cb.dataset.demoId;
-        if (cb.checked) {
-          this.selectedDemoIds.add(id);
-        } else {
-          this.selectedDemoIds.delete(id);
-        }
-        // Update batch action buttons
-        const header = this.container.querySelector('#demo-list-header');
-        if (header) header.innerHTML = this._renderDemoListHeader();
-        this._bindDemoListHeaderEvents();
-      });
-    });
-
-    // Click card in selection mode → toggle checkbox
+    // Click card in selection mode → toggle selection
     root.querySelectorAll('.demo-card').forEach((card) => {
       card.addEventListener('click', (e) => {
         if (!this.selectionMode) return;
-        if (e.target.closest('input[type="checkbox"]')) return;
+        e.preventDefault();
         const id = card.dataset.demoId;
-        const cb = card.querySelector('.demo-select-checkbox');
-        if (cb) {
-          cb.checked = !cb.checked;
-          if (cb.checked) this.selectedDemoIds.add(id);
-          else this.selectedDemoIds.delete(id);
-          const header = this.container.querySelector('#demo-list-header');
-          if (header) header.innerHTML = this._renderDemoListHeader();
-          this._bindDemoListHeaderEvents();
+        if (this.selectedDemoIds.has(id)) {
+          this.selectedDemoIds.delete(id);
+        } else {
+          this.selectedDemoIds.add(id);
         }
+        this._refreshDemoArea();
       });
     });
 
