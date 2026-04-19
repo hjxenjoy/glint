@@ -123,11 +123,17 @@ export function exportAsJSON(data) {
   triggerDownload(blob, `glint-export-${new Date().toISOString().slice(0, 10)}.json`);
 }
 
-export function triggerDownload(blob, filename) {
-  const url = URL.createObjectURL(blob);
+export async function triggerDownload(blob, filename) {
+  // Use FileReader.readAsDataURL to avoid createObjectURL failures in
+  // sandboxed/restricted contexts (e.g. Safari, certain PWA environments).
+  const url = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
   const a = Object.assign(document.createElement('a'), { href: url, download: filename });
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

@@ -9,6 +9,7 @@ import {
 } from 'db/assets.js';
 import { getAllProjects } from 'db/projects.js';
 import { buildSrcdoc, resolveFileSet } from 'utils/file-resolver.js';
+import { triggerDownload } from 'utils/zip.js';
 import { formatBytes } from 'utils/base64.js';
 import { formatFull } from 'utils/date.js';
 import { PreviewPanel } from 'components/preview-panel.js';
@@ -498,15 +499,9 @@ export class DemoView {
   async _exportHtml() {
     try {
       const srcdoc = buildSrcdoc(this.demo, this.assets);
-      const blob = new Blob([srcdoc], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${this.demo.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_')}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const blob = new Blob([srcdoc], { type: 'text/html;charset=utf-8' });
+      const filename = `${this.demo.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_')}.html`;
+      await triggerDownload(blob, filename);
       toast.success('已导出为独立 HTML 文件');
     } catch (err) {
       console.error('Export HTML error:', err);
