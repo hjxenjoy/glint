@@ -12,7 +12,11 @@ export class SearchView {
     this.results = { demos: [], projects: [] };
     this._debounceTimer = null;
     this._localeHandler = () => this.render();
+    this._keyHandler = (e) => {
+      if (e.key === 'Escape') appState.navigate('#/');
+    };
     window.addEventListener('locale-change', this._localeHandler);
+    document.addEventListener('keydown', this._keyHandler);
     this.render();
     if (this.query) {
       this.doSearch(this.query);
@@ -23,6 +27,7 @@ export class SearchView {
 
   destroy() {
     window.removeEventListener('locale-change', this._localeHandler);
+    document.removeEventListener('keydown', this._keyHandler);
   }
 
   render() {
