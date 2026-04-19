@@ -1,6 +1,6 @@
-const CACHE_VERSION = 'v4';
-const SHELL_CACHE = 'glint-shell-v4';
-const CDN_CACHE = 'glint-cdn-v4';
+const CACHE_VERSION = 'v5';
+const SHELL_CACHE = 'glint-shell-v5';
+const CDN_CACHE = 'glint-cdn-v5';
 
 const SHELL_FILES = [
   '/',
