@@ -107,6 +107,7 @@ class App {
   }
 
   async renderView(view) {
+    this.currentViewInstance?.destroy?.();
     const main = document.getElementById('main-content');
     if (!main) return;
 

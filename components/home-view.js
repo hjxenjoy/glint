@@ -1,10 +1,10 @@
 import { appState } from 'store/app-state.js';
-import { getAllDemos, deleteDemo, createDemo, cloneDemo } from 'db/demos.js';
+import { getAllDemos, deleteDemo, createDemo, cloneDemo, updateDemo } from 'db/demos.js';
 import { getAllProjects } from 'db/projects.js';
 import { deleteAssetsByDemo, cloneAssetsByDemo, saveAsset } from 'db/assets.js';
 import { resolveFileSet } from 'utils/file-resolver.js';
 import { formatRelative } from 'utils/date.js';
-import { confirm } from 'components/modal.js';
+import { confirm, Modal } from 'components/modal.js';
 import { toast } from 'components/toast.js';
 import { t } from 'utils/i18n.js';
 import { icon } from 'utils/icons.js';
@@ -84,8 +84,15 @@ function renderDemoCard(demo, projectsMap) {
            title="${t('demo.edit')}"
            data-action="edit"
            data-demo-id="${escapeHtml(demo.id)}">
-          ${icon('pencil-simple', 'w-3.5 h-3.5')}
+          ${icon('code', 'w-3.5 h-3.5')}
         </a>
+        <button class="btn btn-icon w-7 h-7 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-[var(--color-accent)] text-white shadow-sm"
+                title="重命名"
+                data-action="rename"
+                data-demo-id="${escapeHtml(demo.id)}"
+                data-demo-title="${escapeHtml(demo.title)}">
+          ${icon('pencil-simple', 'w-3.5 h-3.5')}
+        </button>
         <button class="btn btn-icon w-7 h-7 bg-black/60 backdrop-blur-sm border border-white/10 hover:border-[var(--color-accent)] text-white shadow-sm"
                 title="${t('demo.clone')}"
                 data-action="clone"
@@ -138,6 +145,12 @@ export class HomeView {
   destroy() {
     appState.removeEventListener('data-changed', this._onDataChanged);
     window.removeEventListener('locale-change', this._localeHandler);
+    if (this._ddEnter) {
+      this.container.removeEventListener('dragenter', this._ddEnter);
+      this.container.removeEventListener('dragover', this._ddOver);
+      this.container.removeEventListener('dragleave', this._ddLeave);
+      this.container.removeEventListener('drop', this._ddDrop);
+    }
   }
 
   async init() {
@@ -368,44 +381,99 @@ export class HomeView {
     this.container.querySelectorAll('[data-action="edit"]').forEach((btn) => {
       btn.addEventListener('click', (e) => e.stopPropagation());
     });
+
+    // Rename buttons
+    this.container.querySelectorAll('[data-action="rename"]').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.demoId;
+        const currentTitle = btn.dataset.demoTitle;
+        await this._handleRename(id, currentTitle);
+      });
+    });
+  }
+
+  async _handleRename(id, currentTitle) {
+    const formEl = document.createElement('div');
+    formEl.innerHTML = `
+      <input id="rename-demo-input" type="text" class="input w-full"
+             value="${String(currentTitle || '').replace(/"/g, '&quot;')}"
+             maxlength="200" placeholder="Demo 名称" />
+    `;
+    const modal = new Modal({
+      title: '重命名 Demo',
+      content: formEl,
+      actions: [
+        { label: t('modal.cancel'), variant: 'secondary', onClick: (m) => m.close() },
+        {
+          label: '确认',
+          variant: 'primary',
+          onClick: async (m) => {
+            const input = formEl.querySelector('#rename-demo-input');
+            const newTitle = input.value.trim();
+            if (!newTitle) {
+              input.focus();
+              return;
+            }
+            try {
+              await updateDemo(id, { title: newTitle });
+              appState.notifyDataChanged('demo');
+              toast.success('已重命名');
+              m.close();
+            } catch (err) {
+              console.error('Rename error:', err);
+              toast.error('重命名失败');
+            }
+          },
+        },
+      ],
+      onClose: () => modal.destroy(),
+    });
+    modal.open();
+    requestAnimationFrame(() => {
+      const input = formEl.querySelector('#rename-demo-input');
+      input?.focus();
+      input?.select();
+    });
   }
 
   _bindDragDrop() {
     let dragCounter = 0;
-    // Look up overlay dynamically — innerHTML is replaced on each render
     const showOverlay = () =>
       this.container.querySelector('#drop-overlay')?.classList.remove('hidden');
     const hideOverlay = () =>
       this.container.querySelector('#drop-overlay')?.classList.add('hidden');
 
-    this.container.addEventListener('dragenter', (e) => {
+    this._ddEnter = (e) => {
       if (!e.dataTransfer?.types.includes('Files')) return;
       e.preventDefault();
       dragCounter++;
       if (dragCounter === 1) showOverlay();
-    });
-
-    this.container.addEventListener('dragover', (e) => {
+    };
+    this._ddOver = (e) => {
       if (!e.dataTransfer?.types.includes('Files')) return;
       e.preventDefault();
       e.dataTransfer.dropEffect = 'copy';
-    });
-
-    this.container.addEventListener('dragleave', () => {
+    };
+    this._ddLeave = () => {
       dragCounter--;
       if (dragCounter <= 0) {
         dragCounter = 0;
         hideOverlay();
       }
-    });
-
-    this.container.addEventListener('drop', async (e) => {
+    };
+    this._ddDrop = async (e) => {
       e.preventDefault();
       dragCounter = 0;
       hideOverlay();
       const files = [...(e.dataTransfer?.files || [])];
       if (files.length > 0) await this._handleFileDrop(files);
-    });
+    };
+
+    this.container.addEventListener('dragenter', this._ddEnter);
+    this.container.addEventListener('dragover', this._ddOver);
+    this.container.addEventListener('dragleave', this._ddLeave);
+    this.container.addEventListener('drop', this._ddDrop);
   }
 
   async _handleFileDrop(files) {
@@ -767,6 +835,59 @@ export class AllDemosView {
 
     root.querySelectorAll('[data-action="edit"]').forEach((btn) => {
       btn.addEventListener('click', (e) => e.stopPropagation());
+    });
+
+    root.querySelectorAll('[data-action="rename"]').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.demoId;
+        const currentTitle = btn.dataset.demoTitle;
+        await this._handleRename(id, currentTitle);
+      });
+    });
+  }
+
+  async _handleRename(id, currentTitle) {
+    const formEl = document.createElement('div');
+    formEl.innerHTML = `
+      <input id="rename-demo-input" type="text" class="input w-full"
+             value="${String(currentTitle || '').replace(/"/g, '&quot;')}"
+             maxlength="200" placeholder="Demo 名称" />
+    `;
+    const modal = new Modal({
+      title: '重命名 Demo',
+      content: formEl,
+      actions: [
+        { label: t('modal.cancel'), variant: 'secondary', onClick: (m) => m.close() },
+        {
+          label: '确认',
+          variant: 'primary',
+          onClick: async (m) => {
+            const input = formEl.querySelector('#rename-demo-input');
+            const newTitle = input.value.trim();
+            if (!newTitle) {
+              input.focus();
+              return;
+            }
+            try {
+              await updateDemo(id, { title: newTitle });
+              appState.notifyDataChanged('demo');
+              toast.success('已重命名');
+              m.close();
+            } catch (err) {
+              console.error('Rename error:', err);
+              toast.error('重命名失败');
+            }
+          },
+        },
+      ],
+      onClose: () => modal.destroy(),
+    });
+    modal.open();
+    requestAnimationFrame(() => {
+      const input = formEl.querySelector('#rename-demo-input');
+      input?.focus();
+      input?.select();
     });
   }
 
