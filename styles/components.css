@@ -436,6 +436,15 @@
     line-height: 1.6;
   }
 
+  /* ── Sidebar drag-to-reorder ─────────────────────────────── */
+  .drag-over-top {
+    border-top: 2px solid var(--color-accent);
+  }
+
+  .drag-over-bottom {
+    border-bottom: 2px solid var(--color-accent);
+  }
+
   /* ── Sidebar Nav Item ─────────────────────────────────────── */
   .sidebar-nav-item {
     display: flex;
