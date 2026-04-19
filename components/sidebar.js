@@ -1,6 +1,7 @@
 import { appState } from 'store/app-state.js';
 import { getAllProjects, createProject } from 'db/projects.js';
 import { getAllDemos } from 'db/demos.js';
+import { getSetting, setSetting } from 'db/settings.js';
 import { getStorageEstimate, formatBytes } from 'utils/storage-estimate.js';
 import { t } from 'utils/i18n.js';
 import { icon } from 'utils/icons.js';
@@ -13,6 +14,8 @@ export class Sidebar {
     this.projects = [];
     this.demosByProject = new Map(); // projectId => demos[]
     this.uncategorizedDemos = [];
+    this.collapsedProjects = new Set();
+    this.sortMode = 'alpha'; // 'alpha' | 'updated'
 
     this._localeHandler = () => {
       this.render();
@@ -31,10 +34,21 @@ export class Sidebar {
   }
 
   async loadData() {
-    const [projects, allDemos] = await Promise.all([getAllProjects(), getAllDemos()]);
+    const [projects, allDemos, collapsedRaw, sortMode] = await Promise.all([
+      getAllProjects(),
+      getAllDemos(),
+      getSetting('sidebar-collapsed-projects', []),
+      getSetting('sidebar-sort-mode', 'alpha'),
+    ]);
 
-    // Sort projects A-Z
-    this.projects = projects.sort((a, b) => a.title.localeCompare(b.title, 'zh'));
+    this.collapsedProjects = new Set(Array.isArray(collapsedRaw) ? collapsedRaw : []);
+    this.sortMode = sortMode || 'alpha';
+
+    if (this.sortMode === 'updated') {
+      this.projects = projects.sort((a, b) => b.updatedAt - a.updatedAt);
+    } else {
+      this.projects = projects.sort((a, b) => a.title.localeCompare(b.title, 'zh'));
+    }
 
     // Group demos by project
     this.demosByProject = new Map();
@@ -123,13 +137,24 @@ export class Sidebar {
     const content = this.container.querySelector('#sidebar-content');
     if (!content) return;
 
+    const sortTitle =
+      this.sortMode === 'alpha'
+        ? '按字母排序（点击切换为最近更新）'
+        : '按最近更新排序（点击切换为字母）';
+    const sortIconName = this.sortMode === 'alpha' ? 'caret-down' : 'arrow-counter-clockwise';
+
     let html = `
       <div class="p-2">
         <div class="flex items-center justify-between px-2 py-1 mb-1">
           <span class="text-xs font-semibold text-[var(--color-text-tertiary)] uppercase tracking-wider">${t('sidebar.projects')}</span>
-          <button type="button" class="btn btn-icon btn-ghost" title="${t('sidebar.new_project')}" id="new-project-btn">
-            ${icon('folder-plus', 'w-3.5 h-3.5')}
-          </button>
+          <div class="flex items-center gap-0.5">
+            <button type="button" class="btn btn-icon btn-ghost w-6 h-6" title="${sortTitle}" id="sort-projects-btn">
+              ${icon(sortIconName, 'w-3.5 h-3.5')}
+            </button>
+            <button type="button" class="btn btn-icon btn-ghost" title="${t('sidebar.new_project')}" id="new-project-btn">
+              ${icon('folder-plus', 'w-3.5 h-3.5')}
+            </button>
+          </div>
         </div>
     `;
 
@@ -160,21 +185,36 @@ export class Sidebar {
   }
 
   _renderProjectGroup(project, demos) {
+    const isCollapsed = this.collapsedProjects.has(project.id);
     return `
       <div class="mb-0.5" data-project-id="${project.id}">
-        <a href="#/projects/${project.id}"
-           class="sidebar-nav-item group"
-           data-view="project" data-id="${project.id}">
-          ${icon('folder', 'w-4 h-4 text-[var(--color-accent)] shrink-0')}
-          <span class="flex-1 truncate text-sm">${escapeHtml(project.title)}</span>
-        </a>
-        <div class="pl-5">
-          ${
-            demos.length === 0
-              ? `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-0.5">${t('sidebar.no_demos')}</p>`
-              : demos.map((d) => this._renderDemoItem(d)).join('')
-          }
+        <div class="flex items-center group">
+          <button type="button"
+                  class="collapse-toggle shrink-0 p-1 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] transition-colors"
+                  data-collapse-id="${escapeHtml(project.id)}"
+                  title="${isCollapsed ? '展开' : '收起'}">
+            ${icon(isCollapsed ? 'caret-right' : 'caret-down', 'w-3 h-3')}
+          </button>
+          <a href="#/projects/${project.id}"
+             class="sidebar-nav-item flex-1 min-w-0 group"
+             data-view="project" data-id="${project.id}">
+            ${icon('folder', 'w-4 h-4 text-[var(--color-accent)] shrink-0')}
+            <span class="flex-1 truncate text-sm">${escapeHtml(project.title)}</span>
+          </a>
         </div>
+        ${
+          !isCollapsed
+            ? `
+          <div class="pl-8">
+            ${
+              demos.length === 0
+                ? `<p class="text-xs text-[var(--color-text-tertiary)] px-2 py-0.5">${t('sidebar.no_demos')}</p>`
+                : demos.map((d) => this._renderDemoItem(d)).join('')
+            }
+          </div>
+        `
+            : ''
+        }
       </div>
     `;
   }
@@ -195,6 +235,26 @@ export class Sidebar {
     this.container.querySelector('#new-project-btn')?.addEventListener('click', (e) => {
       e.preventDefault();
       this._openNewProjectModal();
+    });
+
+    this.container.querySelector('#sort-projects-btn')?.addEventListener('click', async () => {
+      this.sortMode = this.sortMode === 'alpha' ? 'updated' : 'alpha';
+      await setSetting('sidebar-sort-mode', this.sortMode);
+      await this.loadData();
+    });
+
+    this.container.querySelectorAll('.collapse-toggle').forEach((btn) => {
+      btn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const projectId = btn.dataset.collapseId;
+        if (this.collapsedProjects.has(projectId)) {
+          this.collapsedProjects.delete(projectId);
+        } else {
+          this.collapsedProjects.add(projectId);
+        }
+        await setSetting('sidebar-collapsed-projects', [...this.collapsedProjects]);
+        this.renderContent();
+      });
     });
   }
 
