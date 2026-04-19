@@ -564,14 +564,12 @@ export class SettingsView {
         if (exists && strategy === 'skip') {
           projectIdMap[project.id] = project.id;
         } else if (exists && strategy === 'overwrite') {
-          // createProject doesn't do upsert; import the raw record via createProject then patch.
-          // For simplicity, use the same ID by calling createProject with a forced ID isn't supported;
-          // we create a new record and remap.
           const created = await createProject({
             title: project.title,
             notes: project.notes,
             tags: project.tags,
             color: project.color,
+            sharedFiles: project.sharedFiles,
           });
           projectIdMap[project.id] = created.id;
         } else if (exists && strategy === 'new') {
@@ -580,6 +578,7 @@ export class SettingsView {
             notes: project.notes,
             tags: project.tags,
             color: project.color,
+            sharedFiles: project.sharedFiles,
           });
           projectIdMap[project.id] = created.id;
         } else {
@@ -589,6 +588,7 @@ export class SettingsView {
             notes: project.notes,
             tags: project.tags,
             color: project.color,
+            sharedFiles: project.sharedFiles,
           });
           projectIdMap[project.id] = created.id;
         }

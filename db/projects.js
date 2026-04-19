@@ -21,12 +21,13 @@ export async function getProject(id) {
   return req(tx.objectStore(STORES.PROJECTS).get(id));
 }
 
-export async function createProject({ title, notes = '', tags, color }) {
+export async function createProject({ title, notes = '', tags, color, sharedFiles }) {
   const db = await getDB();
   const project = {
     id: crypto.randomUUID(),
     title,
     notes,
+    ...(sharedFiles ? { sharedFiles } : {}),
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
