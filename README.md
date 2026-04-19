@@ -10,8 +10,9 @@ Glint is a zero-server, zero-install web app for managing, previewing, and editi
 
 ### Demo Management
 - **Quick paste** — paste HTML and hit create; `<title>` is auto-extracted as the demo name
-- **Drag & drop** — drag one or multiple `.html` files onto the home page to batch-create demos; drag mixed files (html + css + images) to bundle them into a single multi-file demo
+- **Drag & drop** — drag one or multiple `.html` files onto the home page to batch-create demos (each HTML gets its own demo); drag mixed files (html + css + images) to bundle them into a single multi-file demo; CSS files are shared to the project when uploading alongside multiple HTMLs
 - **Upload** — single file or entire folder upload, entry file auto-detected
+- **Multi-select** — select multiple demos in a project view to batch-delete or batch-move them to another project
 - **Clone** — one-click deep copy of any demo, including all image assets
 - **Export** — download a self-contained HTML file with all assets inlined (ready to share)
 - **Delete**
@@ -25,10 +26,11 @@ Glint is a zero-server, zero-install web app for managing, previewing, and editi
 - **Info tab** — edit notes, assign demo to a project
 
 ### Projects & Organisation
-- Create, rename, and delete projects; click-to-edit description (auto-saves)
+- Create, rename, and delete projects; optionally delete all demos when deleting a project
+- Click-to-edit project description (auto-saves)
 - Demos can belong to a project or stay standalone ("Uncategorised")
 - **Project export** — one-click ZIP containing the project and all its demos
-- Sidebar shows an always-expanded project tree with every demo listed (A–Z)
+- Sidebar project tree is collapsible; supports manual drag-to-reorder projects
 
 ### Search & Navigation
 - **Global search** — press `/` anywhere; searches title and notes across all demos
