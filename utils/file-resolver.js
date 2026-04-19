@@ -86,10 +86,23 @@ function guessMime(filename) {
 }
 
 // Replace asset references in HTML content with base64 data URIs
-export function inlineAssets(htmlContent, assetsMap) {
+export function inlineAssets(htmlContent, assetsMap, cssFiles = {}) {
   // Parse with DOMParser for HTML attributes
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlContent, 'text/html');
+
+  // Inline linked CSS files (order-independent, handles href before or after rel)
+  doc.querySelectorAll('link[rel="stylesheet"]').forEach((link) => {
+    const href = link.getAttribute('href');
+    if (!href) return;
+    const basename = href.split('/').pop().split('?')[0];
+    const cssContent = cssFiles[basename] || cssFiles[href];
+    if (cssContent) {
+      const style = doc.createElement('style');
+      style.textContent = inlineCSSAssets(cssContent, assetsMap);
+      link.replaceWith(style);
+    }
+  });
 
   // Replace src attributes
   doc.querySelectorAll('[src]').forEach((el) => {
@@ -144,27 +157,9 @@ export function buildSrcdoc(demo, assets, fileNameOverride = null) {
     assetsMap[basename] = asset.data;
   }
 
-  // Also inline CSS files referenced in the HTML
-  let html = entryFile.content;
-
-  // Inline linked CSS files
   const cssFiles = Object.fromEntries(
     (demo.files || []).filter((f) => f.name.endsWith('.css')).map((f) => [f.name, f.content])
   );
-  html = html.replace(
-    /<link[^>]+rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi,
-    (match, href) => {
-      const filename = href.split('/').pop();
-      const cssContent = cssFiles[filename] || cssFiles[href];
-      if (cssContent) {
-        const inlined = inlineCSSAssets(cssContent, assetsMap);
-        return `<style>${inlined}</style>`;
-      }
-      return match;
-    }
-  );
 
-  // Inline JS files (optional — skip for security, let them error naturally)
-
-  return inlineAssets(html, assetsMap);
+  return inlineAssets(entryFile.content, assetsMap, cssFiles);
 }
