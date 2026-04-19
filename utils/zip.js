@@ -116,11 +116,11 @@ function guessMime(filename) {
   return map[ext] || 'application/octet-stream';
 }
 
-export function exportAsJSON(data) {
+export async function exportAsJSON(data) {
   const payload = { version: '1', exportedAt: Date.now(), ...data };
   const json = JSON.stringify(payload, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
-  triggerDownload(blob, `glint-export-${new Date().toISOString().slice(0, 10)}.json`);
+  await triggerDownload(blob, `glint-export-${new Date().toISOString().slice(0, 10)}.json`);
 }
 
 export async function triggerDownload(blob, filename) {

@@ -385,9 +385,7 @@ export class SettingsView {
       if (btn) btn.disabled = true;
 
       const data = await this.gatherExportData();
-      const blob = exportAsJSON(data);
-      const date = new Date().toISOString().slice(0, 10);
-      triggerDownload(blob, `glint-export-${date}.json`);
+      await exportAsJSON(data);
       toast.success('JSON 导出成功');
     } catch (err) {
       console.error('Export JSON failed:', err);
@@ -408,7 +406,7 @@ export class SettingsView {
       const data = await this.gatherExportData();
       const blob = await packExport(data);
       const date = new Date().toISOString().slice(0, 10);
-      triggerDownload(blob, `glint-export-${date}.zip`);
+      await triggerDownload(blob, `glint-export-${date}.zip`);
       toast.success('ZIP 导出成功');
     } catch (err) {
       console.error('Export ZIP failed:', err);

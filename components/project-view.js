@@ -402,7 +402,7 @@ export class ProjectView {
       const data = { projects: [this.project], demos: demosWithAssets };
       const blob = await packExport(data);
       const safe = this.project.title.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_');
-      triggerDownload(blob, `glint-project-${safe}.zip`);
+      await triggerDownload(blob, `glint-project-${safe}.zip`);
       toast.success('项目已导出为 ZIP');
     } catch (err) {
       console.error('Export project error:', err);
